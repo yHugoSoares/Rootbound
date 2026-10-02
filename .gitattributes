@@ -1,0 +1,21 @@
+# Normalize line endings across Windows and macOS.
+# Repository stores LF; Windows checkouts may use CRLF. Both are fine for Unity.
+* text=auto
+
+*.cs          text
+*.asmdef      text
+*.json        text
+*.md          text
+*.gitignore   text
+*.gitattributes text
+
+# Unity binary assets
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.psd    binary
+*.tga    binary
+*.fbx    binary
+*.wav    binary
+*.mp3    binary
+*.ogg    binary

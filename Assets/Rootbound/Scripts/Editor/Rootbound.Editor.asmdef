@@ -1,0 +1,19 @@
+{
+    "name": "Rootbound.Editor",
+    "rootNamespace": "Rootbound.EditorTools",
+    "references": [
+        "Rootbound.Core",
+        "Rootbound.Unity"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
