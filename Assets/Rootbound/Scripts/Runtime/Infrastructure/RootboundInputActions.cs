@@ -18,8 +18,8 @@ namespace Rootbound.Unity
         public RootboundInputActions(int playerIndex)
         {
             _map = new InputActionMap(playerIndex == 0 ? "KeyboardMouse" : "Gamepad");
-            Move = _map.AddAction("Move", InputActionType.Value, expectedControlType: "Vector2");
-            Aim = _map.AddAction("Aim", InputActionType.Value, expectedControlType: "Vector2");
+            Move = _map.AddAction("Move", InputActionType.Value, expectedControlLayout: "Vector2");
+            Aim = _map.AddAction("Aim", InputActionType.Value, expectedControlLayout: "Vector2");
             Primary = _map.AddAction("Primary", InputActionType.Button);
             Special = _map.AddAction("Special", InputActionType.Button);
             Dodge = _map.AddAction("Dodge", InputActionType.Button);

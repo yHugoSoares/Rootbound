@@ -35,12 +35,15 @@ project is pinned to `6000.0.84f1`. Do not upgrade the editor silently.
   files or folders whose names differ only by case.
 - Keep the clone at a short path (for example `C:\dev\Rootbound`) to avoid
   Windows `MAX_PATH` issues with Unity and generated `Library/` content.
-- Generated content (`Library/`, `Temp/`, `Logs/`, `obj/`, `bin/`, `Builds/`) is
-  ignored. `Assets/Rootbound/Data/` and `Assets/Rootbound/Scenes/` are generated
-  by the editor menu and are intentionally not committed.
-- `.meta` files must be committed once Unity has generated them. None exist yet
-  because the project has never been opened in Unity. Unity generates them on
-  first import; do not hand-author GUIDs.
+- Generated caches (`Library/`, `Temp/`, `Logs/`, `obj/`, `bin/`, `Builds/`,
+  `UserSettings/`) are ignored and must never be committed.
+- Authored/generated project content is committed so a checkpoint reproduces the
+  scene: `Assets/Rootbound/Data/` (definitions), `Assets/Rootbound/Scenes/`
+  (`CombatArena.unity`), `Assets/Rootbound/Settings/` (URP assets), the URP global
+  settings, and `ProjectSettings/`. The editor menu generator is idempotent and
+  reuses existing assets rather than overwriting them.
+- `.meta` files are committed (Unity generated 68 on first import). Do not
+  hand-author GUIDs.
 
 ## Networking
 

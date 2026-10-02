@@ -1,16 +1,27 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using Rootbound.Core;
 
 namespace Rootbound.Unity
 {
     public sealed class CombatHud : MonoBehaviour
     {
+        public bool showDiagnostics = false;
+
         private CombatSimulation _sim;
         private GUIStyle _style;
+        private GUIStyle _warnStyle;
 
         public void Bind(CombatSimulation sim)
         {
             _sim = sim;
+        }
+
+        private void Update()
+        {
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.f1Key.wasPressedThisFrame)
+                showDiagnostics = !showDiagnostics;
         }
 
         private void OnGUI()
@@ -21,10 +32,14 @@ namespace Rootbound.Unity
                 _style = new GUIStyle(GUI.skin.label);
                 _style.fontSize = 14;
                 _style.normal.textColor = Color.white;
+                _warnStyle = new GUIStyle(GUI.skin.label);
+                _warnStyle.fontSize = 14;
+                _warnStyle.normal.textColor = new Color(1f, 0.85f, 0.3f);
             }
 
             DrawPlayers();
             DrawEncounter();
+            DrawDiagnostics();
 
             if (_sim.EncounterCleared || _sim.AllPlayersDefeated)
             {
@@ -49,12 +64,20 @@ namespace Rootbound.Unity
                 float width = 250f;
                 GUI.Label(new Rect(x, y, width, 20f), p.Spec.DisplayName, _style);
                 DrawBar(new Rect(x, y + 22f, width, 14f), p.Health.Normalized, HealthColor(p.Health.Normalized));
-                GUI.Label(new Rect(x, y + 38f, width, 20f),
+                GUI.Label(new Rect(x, y + 38f, width + 220f, 20f),
                     "HP " + Mathf.CeilToInt(p.Health.Current) + "/" + Mathf.CeilToInt(p.Health.Max) +
-                    "   Dodge " + ReadyText(p.DodgeCooldown) +
-                    "   Primary " + ReadyText(p.PrimaryCooldown) +
-                    "   Special " + ReadyText(p.SpecialCooldown), _style);
-                y += 66f;
+                    "   Dodge " + CooldownDisplay.Label(p.DodgeCooldown) +
+                    "   Primary " + CooldownDisplay.Label(p.PrimaryCooldown) +
+                    "   Special " + CooldownDisplay.Label(p.SpecialCooldown), _style);
+
+                if (p.LastRequestTick >= 0 && !p.LastRequestAccepted)
+                {
+                    float age = (_sim.Tick - p.LastRequestTick) * _sim.DeltaTime;
+                    if (age <= 0.9f)
+                        GUI.Label(new Rect(x, y + 60f, width + 220f, 18f),
+                            p.LastRequestedSlot + ": " + p.LastRequestReason, _warnStyle);
+                }
+                y += 84f;
             }
         }
 
@@ -77,9 +100,56 @@ namespace Rootbound.Unity
             }
         }
 
-        private static string ReadyText(Cooldown cooldown)
+        private void DrawDiagnostics()
         {
-            return cooldown.IsReady ? "ready" : cooldown.Remaining.ToString("0.0");
+            if (!showDiagnostics) return;
+            if (!Application.isEditor && !Debug.isDebugBuild) return;
+
+            float x = 16f;
+            float y = Screen.height - 190f;
+            float width = 620f;
+            GUI.color = new Color(0f, 0f, 0f, 0.65f);
+            GUI.Box(new Rect(x - 6f, y - 6f, width + 12f, 182f), GUIContent.none);
+            GUI.color = Color.white;
+
+            GUI.Label(new Rect(x, y, width, 20f),
+                "DIAG (F1)  tick=" + _sim.Tick +
+                "  elapsed=" + _sim.ElapsedTime.ToString("0.00") + "s" +
+                "  dt=" + _sim.DeltaTime.ToString("0.0000") + "s" +
+                "  timeScale=" + Time.timeScale.ToString("0.00"), _style);
+            y += 22f;
+
+            for (int i = 0; i < _sim.Players.Count; i++)
+            {
+                PlayerState p = _sim.Players[i];
+                GUI.Label(new Rect(x, y, width, 20f),
+                    p.Spec.DisplayName +
+                    "  HP=" + p.Health.Current.ToString("0") + "/" + p.Health.Max.ToString("0") +
+                    "  defeated=" + p.IsDefeated +
+                    "  dodge=" + (p.Dodge.IsActive ? "active" : "idle") +
+                    "/invuln=" + p.Dodge.IsInvulnerable, _style);
+                GUI.Label(new Rect(x, y + 18f, width, 20f),
+                    "   cd P=" + CooldownDisplay.Label(p.PrimaryCooldown) +
+                    " S=" + CooldownDisplay.Label(p.SpecialCooldown) +
+                    " D=" + CooldownDisplay.Label(p.DodgeCooldown) +
+                    " normD=" + CooldownDisplay.NormalizedLabel(p.DodgeCooldown) +
+                    "   last=" + p.LastRequestedSlot +
+                    " " + (p.LastRequestAccepted ? "accepted" : "rejected") +
+                    " (" + p.LastRequestReason + ") @tick " + p.LastRequestTick, _style);
+                y += 40f;
+            }
+
+            for (int i = 0; i < _sim.Enemies.Count && i < 2; i++)
+            {
+                EnemyState e = _sim.Enemies[i];
+                GUI.Label(new Rect(x, y, width, 20f),
+                    "Enemy " + e.Id +
+                    "  HP=" + e.Health.Current.ToString("0") +
+                    "  defeated=" + e.IsDefeated +
+                    "  attackCd=" + e.AttackCooldown.Remaining.ToString("0.00") +
+                    "  restrained=" + e.IsRestrained, _style);
+                y += 20f;
+            }
         }
 
         private static Color HealthColor(float normalized)

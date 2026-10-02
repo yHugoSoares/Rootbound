@@ -3,7 +3,9 @@
     "rootNamespace": "Rootbound.EditorTools",
     "references": [
         "Rootbound.Core",
-        "Rootbound.Unity"
+        "Rootbound.Unity",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime"
     ],
     "includePlatforms": [
         "Editor"

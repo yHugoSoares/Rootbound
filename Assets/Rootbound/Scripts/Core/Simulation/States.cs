@@ -18,6 +18,17 @@ namespace Rootbound.Core
         public AbilityExecution Special;
         public DodgeState Dodge;
 
+        public Vec2 AimTarget;
+        public bool HasAimTarget;
+        public bool AimTargetClamped;
+        public Vec2 SpecialTarget;
+        public bool HasSpecialTarget;
+
+        public AbilitySlot LastRequestedSlot;
+        public bool LastRequestAccepted;
+        public string LastRequestReason = "none";
+        public int LastRequestTick = -1;
+
         public bool IsDefeated { get { return Health.IsDefeated; } }
     }
 

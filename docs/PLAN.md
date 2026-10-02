@@ -1,6 +1,8 @@
 # Rootbound: Fractured Realms — Implementation Plan and Assumptions
 
-Status: living document. Last updated for Milestone 1.
+Status: living document. Section 1 below records the original authoring
+environment (Unity was not installed then). Unity is now installed and the project
+compiles and runs headlessly; for current status see `docs/HANDOFF.md`.
 
 ## 1. Environment inventory (verified)
 

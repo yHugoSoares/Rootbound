@@ -1,137 +1,239 @@
 # Handoff
 
-Milestone 1: one local combat arena. This document records what is real, what is
-not, and the exact next steps. For platform policy see `docs/ENVIRONMENT.md`.
-Windows is the primary environment and the initial release target.
+Milestone 1 (local combat arena) has now been **imported, compiled, and run
+headlessly** on the Mac with Unity `6000.0.84f1`. This document records exactly
+what was verified, what was fixed, and what still requires the GUI or hardware.
+Platform policy is in `docs/ENVIRONMENT.md`.
 
-## Completed
+## Current status
 
-- Repository established as a Unity 6.0 LTS project skeleton with a Unity
-  `.gitignore`, `.gitattributes`, `Packages/manifest.json`, and pinned
-  `ProjectSettings/ProjectVersion.txt`.
-- **`Rootbound.Core`** (pure C#, no engine references): authored specs, `Health`,
-  `Cooldown`, `AbilityExecution`, `DodgeState`, target rules, `RootCageState`,
-  and the host-authoritative `CombatSimulation` with all three creatures and the
-  ignition interaction.
-- **`Rootbound.Unity`**: Input System bindings in code for keyboard/mouse +
-  gamepad, `PlayerInputAdapter`, fixed-step `LocalGameRunner`, `CombatView`,
-  `IsometricCameraRig`, IMGUI `CombatHud`, `RootboundMenu`, and the
-  `INetworkSession` + `OfflineNetworkSession` seam.
-- **`Rootbound.Editor`**: reproducible `Rootbound > Build Milestone 1 Content` and
-  `Rootbound > Create Arena Scene` generators.
-- **Tests**: 28 NUnit tests under `Assets/Rootbound/Tests/EditMode`, runnable via
-  `dotnet test Tools/CoreTests/CoreTests.csproj` and Unity EditMode.
-- Documentation: README, PLAN, ARCHITECTURE, DECISIONS, TESTING, HANDOFF, ENVIRONMENT.
+- Unity compile: **succeeded** (`-batchmode`, EXIT=0, no `error CS`).
+- Unity EditMode tests: **47/47 passed**.
+- Unity PlayMode integration tests: **3/3 passed**.
+- Pure core tests: **47/47 passed**.
+- Arena scene: **generated** (`Assets/Rootbound/Scenes/CombatArena.unity`) and it
+  runs in Play Mode headlessly.
+- Local GUI play (keyboard/mouse, single instance): **manually validated** (see
+  "Manual validation"). Gamepad, two-player, standalone builds, and online play:
+  **not validated**.
 
-## Transfer contents (reviewed for the Windows move)
+## Exact engine and packages (resolved on this machine)
 
-| Item | Present | Notes |
+- Editor used: **`6000.0.84f1`**, arm64, `/Applications/Unity/Hub/Editor/6000.0.84f1`.
+  A second editor `6000.6.4f1` is installed but was **not** used, to avoid a
+  silent editor migration.
+- `Packages/packages-lock.json` resolved:
+  - `com.unity.render-pipelines.universal` **17.0.4** (editor-bundled; manifest pins 17.0.3)
+  - `com.unity.render-pipelines.core` 17.0.4
+  - `com.unity.inputsystem` **1.11.2** (registry)
+  - `com.unity.test-framework` **1.6.0** (editor-bundled; manifest pins 1.4.6)
+  - `com.unity.ugui` 2.0.0
+- Active Input Handling was `0` (Input Manager only). It is now **Both**, written
+  to `ProjectSettings/ProjectSettings.asset`, so the Input System backend is active.
+
+## Setup performed (reproducible)
+
+Run from the project root with the pinned editor:
+
+```
+"/Applications/Unity/Hub/Editor/6000.0.84f1/Unity.app/Contents/MacOS/Unity" \
+  -batchmode -nographics -quit -projectPath "$(pwd)" \
+  -executeMethod Rootbound.EditorTools.RootboundSceneBuilder.SetupAndCreateArenaScene
+```
+
+That command:
+1. Creates and assigns the URP asset
+   (`Assets/Rootbound/Settings/RootboundUrpAsset.asset` +
+   `RootboundUniversalRenderer.asset`) in Graphics and Quality settings.
+2. Sets Active Input Handling to Both.
+3. Writes the definition assets (`Assets/Rootbound/Data/*.asset`).
+4. Creates `Assets/Rootbound/Scenes/CombatArena.unity` and adds it to Build Settings.
+
+The same steps are available in the menu as
+`Rootbound > Setup Project and Create Arena Scene`, or as separate
+`Rootbound > Configure URP and Input`, `Build Milestone 1 Content`,
+`Create Arena Scene`. All are idempotent: existing assets are reused, not
+overwritten.
+
+## Errors found and fixed during import
+
+1. `RootboundMenu.cs`: `Repaint()` does not exist on `MonoBehaviour`. Removed the
+   unused `INetworkSession.Changed` handler; the IMGUI menu redraws each frame.
+2. `RootboundInputActions.cs`: `InputActionMap.AddAction` has no parameter named
+   `expectedControlType`. The correct name in Input System 1.11.2 is
+   `expectedControlLayout`; both actions updated.
+3. `Rootbound.Editor.asmdef`: the configurator needs URP types. Added
+   `Unity.RenderPipelines.Core.Runtime` and `Unity.RenderPipelines.Universal.Runtime`
+   references (and `RootboundProjectConfigurator.cs` for URP/input automation).
+
+No gameplay logic was changed during import.
+
+## Manual review round 2: cooldowns never advanced (root cause)
+
+Manual findings (WASD worked; primary had no effect; special and dodge worked once
+then never; HUD was frozen; enemies stopped damaging after the first hit) were all
+caused by one defect:
+
+- `CombatSimulation.Step` advanced `AbilityExecution`, `DodgeState`, cages and
+  projectiles, but **never called `Cooldown.Tick`**. Player primary/special/dodge
+  cooldowns and `EnemyState.AttackCooldown` therefore froze at their configured
+  duration after first use.
+- Mutable structs were **not** the problem. `PlayerState`/`EnemyState` are classes
+  and `Health`/`Cooldown`/`DodgeState` are public fields, so mutation happens in
+  place; `IReadOnlyList<PlayerState>` and `foreach` yield references, not copies.
+  The defect was purely the missing update call.
+
+Fix (minimal, no architecture change, no cooldown bypass, invulnerability kept):
+
+- `CombatSimulation.UpdateCooldowns(dt)` runs at the start of every `Step` and
+  ticks primary/special/dodge for all players and attack for all enemies.
+- `CombatSimulation.ElapsedTime` now advances per step.
+- Dev diagnostics added: `CombatHud` F1 overlay (release-hidden) and
+  `PlayerState.LastRequestedSlot/LastRequestAccepted/LastRequestReason/LastRequestTick`.
+
+Regression proof: with the fix removed the suite was **6 failed / 28 passed /
+34 total** (exactly the six new tests); with the fix restored it is **34/34**.
+A PlayMode test (`RunnerAdvancesCooldownsWithoutInput`) verifies recovery through
+the real `LocalGameRunner` path. See `docs/TESTING.md`.
+
+## Manual review round 3: targeting, special repeat, dodge latch
+
+Three separate issues were found and fixed (no architecture change, no Photon):
+
+1. **Special ignored the cursor.** `PlayerCommand` carried only a direction and
+   `ResolveSpecial` used `Position + Facing * CastRange` (always max range).
+   Added an optional `TargetPoint` to `PlayerCommand`; the simulation snapshots
+   the target on the accepted cast, clamps it to `CastRange` in the same
+   direction, and spawns the cage there. Dev-only aim markers show the actual
+   landing point (orange when clamped).
+2. **"Q only once".** There is no single-cage restriction. The cage expires at
+   3.5s but the special cooldown is 5.5s, and rejections were invisible, so a
+   press inside that gap silently did nothing. Repeat casts are now covered by
+   tests, and rejections show the exact reason (`Special: cooldown 2.31s`).
+3. **Intermittent dodge.** `WasPressedThisFrame()` was sampled only inside
+   `PlayerInputAdapter.Build`, which only runs on fixed steps, so frames with no
+   step dropped the press. `LocalGameRunner` now calls `CaptureFrame` every
+   rendered frame; the adapter latches the press until a `Build` consumes it once.
+   Direction rule: move direction if moving, otherwise facing.
+
+The F1 diagnostics overlay default was also corrected to hidden.
+
+## Manual review round 4: dodge counter display
+
+The counter was already reading the authoritative `PlayerState.DodgeCooldown`
+(live, correct player, correct unit) and `OnGUI` only reads; only
+`CombatSimulation.Step` advances timers. The visible defects were presentation:
+
+1. **Locale formatting bug:** `ToString("0.0")` is culture-sensitive and rendered
+   `0,9` (comma) on this machine. All cooldown values now go through
+   `CooldownDisplay` with `CultureInfo.InvariantCulture`.
+2. **`0.0` shown before ready:** rounding displayed `0.0` while a press was still
+   rejected. `CooldownDisplay.Label` rounds up to the next tenth and only shows
+   `ready` at `IsReady`.
+3. **Overlapping text:** the rejection line overlapped the cooldown line and the
+   next player's block; spacing was increased.
+4. **Paused when unfocused:** `runInBackground` was `0`, so Editor play paused
+   when the window lost focus, matching "only counts down while interacting".
+   Set to `1`.
+
+No change to dodge timing, cooldown duration, or invulnerability. The simulation
+remains the single source of truth; no UI timer was added.
+
+## Manual validation (keyboard/mouse, local)
+
+Confirmed by the developer in the Unity Editor on this Mac:
+
+- WASD movement and mouse aiming.
+- Primary attack deals damage; cooldown counts down; can attack again.
+- Cursor targeting and range clamping (marker at cursor; clamped landing point).
+- Repeated Q casts after cooldown; cage spawns at the marker.
+- Moving and stationary dodge; executes and recovers.
+- Cooldown display counts down and returns to ready; rejection feedback shown.
+- F1 diagnostics toggle.
+- Repeated enemy damage over time and live HUD updates.
+
+Explicitly **not** validated: gamepad input, local two-player, Root Cage ignition
+in the GUI, encounter/defeat overlays and `R` restart in the GUI, long-session
+exception soak, frame-rate sweep, standalone builds, and online play.
+
+## Tests actually executed
+
+| Suite | Command | Result |
 | --- | --- | --- |
-| `Assets/` source, asmdefs, tests | Yes | 33 files, all reviewed. |
-| `.meta` files | **No** | The project has never been opened in Unity, so no `.meta` exists. Unity generates them on first import. Do not hand-author. |
-| `Packages/manifest.json` | Yes | Package configuration included. |
-| `ProjectSettings/` | Partial | Only `ProjectVersion.txt`. Unity writes the remaining settings on first open. |
-| `Tools/CoreTests/` | Yes | `CoreTests.csproj` is intentionally tracked despite the global `*.csproj` ignore. |
-| `README.md` and `docs/` | Yes | README, PLAN, ARCHITECTURE, DECISIONS, TESTING, HANDOFF, ENVIRONMENT. |
-| `Library/`, `Temp/`, `Logs/`, `obj/`, `bin/` | No | Generated; ignored. |
-| Generated `Data/` assets and `Scenes/CombatArena.unity` | No | Generated by the editor menu; intentionally not committed. |
+| Pure core | `dotnet test Tools/CoreTests/CoreTests.csproj` | 47 passed, 0 failed |
+| Unity import/compile | `-batchmode -nographics -quit` | EXIT=0, no compiler errors |
+| Unity EditMode | `-runTests -testPlatform EditMode` | 47 passed, 0 failed |
+| Unity PlayMode | `-runTests -testPlatform PlayMode` | 3 passed, 0 failed |
 
-## Exact engine and package versions
+The PlayMode tests load the generated scene and assert scene wiring, creature
+spawning from ScriptableObjects, simulation stepping, Blightling movement/damage,
+no exceptions, cooldown recovery through `LocalGameRunner` with no input, and
+that a discrete dodge press is latched across a frame with no fixed step. They
+run with `-nographics`; this is **not** a visual or GUI check. Full detail in
+`docs/TESTING.md`.
 
-- **Unity Editor: `6000.0.84f1`** (Unity 6.0 LTS), revision `78ab6fc243d5`
-  (`ProjectSettings/ProjectVersion.txt`).
-  - Supported alternative: `6000.3.25f1` (Unity 6.3 LTS). Do not switch silently.
-- Required registry packages (`Packages/manifest.json`):
-  - `com.unity.render-pipelines.universal` `17.0.3`
-  - `com.unity.inputsystem` `1.11.2`
-  - `com.unity.test-framework` `1.4.6`
-  - `com.unity.ugui` `2.0.0`
-  - `com.unity.timeline` `1.8.7`
-  - `com.unity.ide.rider` `3.0.31`
-  - `com.unity.ide.visualstudio` `2.0.22`
-  - Standard `com.unity.modules.*` set.
-- **Unresolved dependency: Photon Fusion 2.** Not in the manifest, not installed.
-  Package name/version and a Photon App ID must be obtained and verified.
-- Package patch versions are pinned from official docs and have **not** been
-  confirmed by a Package Manager resolve on Windows.
+A Unity batchmode run requires the Editor to be closed for this project. If the
+Editor is open, use `Window > General > Test Runner` instead of launching a second
+instance.
 
-## What was actually tested
+## Controls and two-player assignment (verified by code inspection)
 
-Tests run from the current working tree:
+`RootboundMenu.StartLocal()` starts `LocalGameRunner.BeginSession()` with
+`playerCount = 2`. `BeginSession` builds one input map per player index:
 
-- `dotnet test Tools/CoreTests/CoreTests.csproj` -> **Passed: 28, Failed: 0,
-  Skipped: 0, Total: 28.**
-- Roslyn C# 9 syntax parse of all 29 source files -> **0 syntax errors.**
+- **Player 1 (index 0) - keyboard/mouse:**
+  - Move `WASD` (also left stick), Aim mouse position (also right stick),
+    Primary left mouse (also gamepad South), Special `Q` / right mouse (also
+    gamepad West), Dodge `Space` (also gamepad East).
+  - Aim uses a mouse raycast to the ground plane whenever a mouse is present.
+- **Player 2 (index 1) - gamepad only:**
+  - Move left stick, Aim right stick, Primary right trigger, Special left
+    trigger, Dodge gamepad East.
+  - **There are no keyboard bindings for player 2.**
 
-Both compile/run the pure `Rootbound.Core` domain and its NUnit tests only.
-No Unity or networking check was executed.
+Consequence: **local two-player requires one gamepad for player 2.** Player 1 can
+be played alone with keyboard and mouse. Player 2 cannot be played without a
+gamepad. Both maps bind `<Gamepad>` generically, so two simultaneous gamepads are
+not distinctly assigned; this is a known limitation. This has **not** been tested
+with physical hardware here.
 
-## What remains unverified in Unity
+Local two-player simulation is not online multiplayer. Fusion is not installed
+and was intentionally not integrated.
 
-- **Not run:** Unity compile/import, Unity Test Runner, Play Mode, any build, and
-  any online multiplayer. None of these are validated.
-- The entire `Rootbound.Unity` and `Rootbound.Editor` layer has never been
-  compiled by Unity. Expect to fix minor API or wiring issues on first import.
-- No URP render pipeline asset is committed; Graphics/Quality assignment is a
-  manual step on Windows.
-- Placement, input mapping, camera framing, and HUD layout are unverified visually.
-- Online play, prediction/reconciliation, resimulation guards, host migration,
-  and matchmaking are not implemented.
-- Player 2 gamepad uses the first connected gamepad; two-gamepad assignment is
-  not implemented. Player 1 pointer aim ignores the right stick.
-- Determinism across machines is not claimed. Movement is kinematic and does not
-  use Unity physics.
+## Still unverified (requires hardware, builds, or Fusion)
 
-## Steps to open and validate on Windows
+- Real gamepad input (Player 2); local two-player session.
+- Root Cage restrain + Ember Moth ignition in the GUI (automated tests only).
+- Encounter-cleared / all-players-defeated overlays and `R` restart in the GUI.
+- Long-session exception soak; frame-rate consistency at 30/60/144 FPS.
+- URP visual quality under scrutiny.
+- macOS and Windows standalone builds.
+- Online multiplayer (Photon Fusion 2 is not installed).
 
-1. Install **Git for Windows**, **.NET 10 SDK**, **Unity Hub**, and Unity
-   **`6000.0.84f1`** with **Windows Build Support (IL2CPP)**. Install VS 2022 with
-   the "Game development with Unity" workload (or Rider).
-2. Place the clone at a short path, e.g. `C:\dev\Rootbound`.
-3. In Unity Hub, **Add project from disk** and open the folder. Let the first
-   import generate `.meta` files and `Library/`. There should be no project
-   created by the Hub; this is an existing project.
-4. In **Package Manager**, confirm all manifest packages resolve without errors.
-   If a patch is unavailable, accept the compatible patch Unity offers and note it.
-5. Create a URP asset: `Assets > Create > Rendering > URP Asset (with Universal
-   Renderer)`. Assign it in `Edit > Project Settings > Graphics`
-   (Scriptable Render Pipeline Settings) and in `Project Settings > Quality`.
-6. Menu `Rootbound > Build Milestone 1 Content`, then
-   `Rootbound > Create Arena Scene`.
-7. Open `Assets/Rootbound/Scenes/CombatArena.unity`, press **Play**, and click
-   **Host Local Session (2 players)**. Verify movement, primary, dodge i-frames,
-   both specials, the Root Cage ignition interaction, HUD, defeat, and restart.
-8. Run the tests:
-   - `dotnet test Tools/CoreTests/CoreTests.csproj` (expect 28/28).
-   - `Window > General > Test Runner > EditMode > Run All`.
-9. Fix any compile errors surfaced by Unity, then re-run steps 7-8. Record real
-   results in `docs/TESTING.md`; do not mark unrun checks as passed.
-10. Commit the Unity-generated `.meta` files (and any `ProjectSettings` Unity
-    writes) so asset references are stable for the next machine. Do **not** commit
-    `Library/`.
+## Build status
 
-## Blockers to transferring the project
+No build was produced. The pinned editor `6000.0.84f1` has only
+**WindowsStandaloneSupport**; **Mac Build Support (IL2CPP) is not installed**, so
+a macOS player cannot be built with it. The `6000.6.4f1` editor *does* include
+`MacStandaloneSupport`, but building with it would migrate the project off the
+pinned version. To build a macOS player without migrating, add **Mac Build
+Support (IL2CPP)** to `6000.0.84f1` via Unity Hub. Windows build/runtime
+validation remains pending.
 
-1. **Unity editor not installed** in the authoring environment. The project has
-   never been imported, so it has no `.meta` files and no configured URP asset.
-   This is expected and resolved by step 1-5 above.
-2. **Photon Fusion 2 is not installed and no App ID exists.** Online play remains
-   blocked until the package and credentials are obtained.
-3. Package patches are unconfirmed until a Windows Package Manager resolve.
+## Blockers
 
-## Recommended next milestone
+1. **Mac build module missing** for `6000.0.84f1` (manual Hub install required).
+2. **No gamepad connected** in this environment, so player 2 input and
+   two-player local play are untested.
+3. **Photon Fusion 2 not installed, no App ID.** Online play is not implemented.
+4. Local prototype checkpoint committed; generated assets, `.meta`, and
+   `ProjectSettings` are now tracked.
 
-**Milestone 2: real two-player Fusion host/join on the same combat core.**
+## Next smallest milestone
 
-1. Complete the Windows import/validation above and stabilize the Unity layer.
-2. Add Fusion 2; implement `FusionNetworkSession : INetworkSession` and a Fusion
-   runner that owns `CombatSimulation` in `FixedUpdateNetwork`, submits networked
-   `PlayerCommand` inputs, and replicates player/enemy/cage state. Guard
-   presentation effects with `Runner.IsResimulating`.
-3. Split the local camera into per-player local cameras (transforms stay local).
-4. Add Fusion simulation latency/packet-loss tests and record results in TESTING.
-5. Replace the IMGUI HUD with uGUI/TMP and add the first between-encounter
-   upgrade choice to exercise the run loop.
-
-Until step 1 is done, this is a code-complete prototype whose gameplay core is
-verified by tests and whose Unity layer is unverified.
+Milestone 2: two separate instances create/join a Photon Fusion **Host Mode**
+session, each controlling its own creature with consistent replicated combat
+state. The integration plan, authority model, and prediction approach (documented
+when the milestone starts in `docs/ARCHITECTURE.md`) must be agreed before
+substantial code. Local two-player and gamepad should be validated first if
+hardware is available.

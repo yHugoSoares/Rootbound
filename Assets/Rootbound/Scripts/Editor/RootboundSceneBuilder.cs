@@ -27,9 +27,17 @@ namespace Rootbound.EditorTools
             Debug.Log("[Rootbound] Definition assets written to " + DataFolder);
         }
 
+        [MenuItem("Rootbound/Setup Project and Create Arena Scene")]
+        public static void SetupAndCreateArenaScene()
+        {
+            RootboundProjectConfigurator.ConfigureAll();
+            CreateArenaScene();
+        }
+
         [MenuItem("Rootbound/Create Arena Scene")]
         public static void CreateArenaScene()
         {
+            RootboundProjectConfigurator.ConfigureUrp();
             BuildContent();
             EnsureFolder(RootFolder, "Scenes");
 

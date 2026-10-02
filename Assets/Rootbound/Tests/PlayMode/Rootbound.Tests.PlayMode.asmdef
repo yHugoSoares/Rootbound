@@ -1,0 +1,22 @@
+{
+    "name": "Rootbound.Tests.PlayMode",
+    "rootNamespace": "Rootbound.Tests",
+    "references": [
+        "Rootbound.Core",
+        "Rootbound.Unity",
+        "Unity.InputSystem",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

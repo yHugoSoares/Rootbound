@@ -21,6 +21,7 @@ namespace Rootbound.Core
         private bool _allPlayersDefeated;
 
         public int Tick { get; private set; }
+        public float ElapsedTime { get; private set; }
         public float DeltaTime { get; private set; }
         public SimConfig Config { get { return _config; } }
         public IReadOnlyList<PlayerState> Players { get { return _players; } }
@@ -85,6 +86,8 @@ namespace Rootbound.Core
         {
             if (dt <= 0f) return;
             _events.Clear();
+            UpdateCooldowns(dt);
+            ElapsedTime += dt;
             ApplyPlayerCommands(dt);
             UpdatePlayerMovement(dt);
             UpdateDodges(dt);
@@ -95,6 +98,21 @@ namespace Rootbound.Core
             ClampEntities();
             EvaluateEndStates();
             Tick++;
+        }
+
+        private void UpdateCooldowns(float dt)
+        {
+            for (int i = 0; i < _players.Count; i++)
+            {
+                PlayerState p = _players[i];
+                p.PrimaryCooldown.Tick(dt);
+                p.SpecialCooldown.Tick(dt);
+                p.DodgeCooldown.Tick(dt);
+            }
+            for (int i = 0; i < _enemies.Count; i++)
+            {
+                _enemies[i].AttackCooldown.Tick(dt);
+            }
         }
 
         private void Rebuild()
@@ -111,6 +129,7 @@ namespace Rootbound.Core
             _encounterCleared = false;
             _allPlayersDefeated = false;
             Tick = 0;
+            ElapsedTime = 0f;
 
             CreatureSpec[] specs = _setup.PlayerSpecs;
             for (int i = 0; i < specs.Length; i++)
@@ -180,28 +199,104 @@ namespace Rootbound.Core
                 p.MoveInput = Vec2.ClampMagnitude(cmd.Move, 1f);
                 CreatureSpec spec = p.Spec;
 
-                if (cmd.Dodge && p.DodgeCooldown.IsReady && !p.Dodge.IsActive)
+                Vec2 requestedTarget = cmd.HasTargetPoint
+                    ? cmd.TargetPoint
+                    : p.Position + p.Facing * spec.Special.CastRange;
+                bool clamped;
+                Vec2 aimTarget = ClampCastTarget(p.Position, requestedTarget, spec.Special.CastRange, out clamped);
+                p.AimTarget = aimTarget;
+                p.HasAimTarget = true;
+                p.AimTargetClamped = clamped;
+
+                if (cmd.Dodge)
                 {
-                    Vec2 dir = hasMove ? cmd.Move.Normalized : p.Facing;
-                    p.Dodge.Begin(dir, spec.Dodge.Duration, spec.Dodge.InvulnStart, spec.Dodge.InvulnEnd);
-                    p.DodgeCooldown.TryStart(spec.Dodge.Cooldown);
-                    p.Primary.Cancel();
-                    p.Special.Cancel();
-                    Raise(SimEventKind.AbilityActivated, p.Id, -1, p.Position, 0f, (int)AbilitySlot.Dodge);
+                    if (p.Dodge.IsActive)
+                    {
+                        RecordRequest(p, AbilitySlot.Dodge, false, "already dodging");
+                    }
+                    else if (!p.DodgeCooldown.IsReady)
+                    {
+                        RecordRequest(p, AbilitySlot.Dodge, false, "cooldown " + CooldownDisplay.Seconds(p.DodgeCooldown.Remaining) + "s");
+                    }
+                    else
+                    {
+                        Vec2 dir = hasMove ? cmd.Move.Normalized : p.Facing;
+                        p.Dodge.Begin(dir, spec.Dodge.Duration, spec.Dodge.InvulnStart, spec.Dodge.InvulnEnd);
+                        p.DodgeCooldown.TryStart(spec.Dodge.Cooldown);
+                        p.Primary.Cancel();
+                        p.Special.Cancel();
+                        Raise(SimEventKind.AbilityActivated, p.Id, -1, p.Position, 0f, (int)AbilitySlot.Dodge);
+                        RecordRequest(p, AbilitySlot.Dodge, true, "accepted");
+                    }
                 }
 
-                if (cmd.Primary && !p.Dodge.IsActive && p.Primary.Phase == AbilityPhase.Ready && p.PrimaryCooldown.IsReady)
+                if (cmd.Primary)
                 {
-                    p.Primary.Begin(spec.Primary.Windup, spec.Primary.Active, spec.Primary.Recovery);
-                    p.PrimaryCooldown.TryStart(spec.Primary.Cooldown);
+                    if (p.Dodge.IsActive)
+                    {
+                        RecordRequest(p, AbilitySlot.Primary, false, "dodging");
+                    }
+                    else if (p.Primary.Phase != AbilityPhase.Ready)
+                    {
+                        RecordRequest(p, AbilitySlot.Primary, false, "busy");
+                    }
+                    else if (!p.PrimaryCooldown.IsReady)
+                    {
+                        RecordRequest(p, AbilitySlot.Primary, false, "cooldown " + CooldownDisplay.Seconds(p.PrimaryCooldown.Remaining) + "s");
+                    }
+                    else
+                    {
+                        p.Primary.Begin(spec.Primary.Windup, spec.Primary.Active, spec.Primary.Recovery);
+                        p.PrimaryCooldown.TryStart(spec.Primary.Cooldown);
+                        RecordRequest(p, AbilitySlot.Primary, true, "accepted");
+                    }
                 }
 
-                if (cmd.Special && !p.Dodge.IsActive && p.Special.Phase == AbilityPhase.Ready && p.SpecialCooldown.IsReady)
+                if (cmd.Special)
                 {
-                    p.Special.Begin(spec.Special.Windup, spec.Special.Active, spec.Special.Recovery);
-                    p.SpecialCooldown.TryStart(spec.Special.Cooldown);
+                    if (p.Dodge.IsActive)
+                    {
+                        RecordRequest(p, AbilitySlot.Special, false, "dodging");
+                    }
+                    else if (p.Special.Phase != AbilityPhase.Ready)
+                    {
+                        RecordRequest(p, AbilitySlot.Special, false, "busy");
+                    }
+                    else if (!p.SpecialCooldown.IsReady)
+                    {
+                        RecordRequest(p, AbilitySlot.Special, false, "cooldown " + CooldownDisplay.Seconds(p.SpecialCooldown.Remaining) + "s");
+                    }
+                    else
+                    {
+                        p.Special.Begin(spec.Special.Windup, spec.Special.Active, spec.Special.Recovery);
+                        p.SpecialCooldown.TryStart(spec.Special.Cooldown);
+                        p.SpecialTarget = aimTarget;
+                        p.HasSpecialTarget = true;
+                        RecordRequest(p, AbilitySlot.Special, true, "accepted");
+                    }
                 }
             }
+        }
+
+        private static Vec2 ClampCastTarget(Vec2 from, Vec2 raw, float maxRange, out bool clamped)
+        {
+            Vec2 delta = raw - from;
+            float distance = delta.Magnitude;
+            if (distance <= maxRange || distance <= 1e-5f)
+            {
+                clamped = false;
+                return raw;
+            }
+            clamped = true;
+            return from + delta * (maxRange / distance);
+        }
+
+        private void RecordRequest(PlayerState p, AbilitySlot slot, bool accepted, string reason)
+        {
+            p.LastRequestedSlot = slot;
+            p.LastRequestAccepted = accepted;
+            p.LastRequestReason = reason;
+            p.LastRequestTick = Tick;
         }
 
         private void UpdatePlayerMovement(float dt)
@@ -275,7 +370,7 @@ namespace Rootbound.Core
         {
             SpecialSpec s = p.Spec.Special;
             Vec2 dir = p.Facing.SqrMagnitude > 0.0001f ? p.Facing.Normalized : new Vec2(0f, 1f);
-            Vec2 target = p.Position + dir * s.CastRange;
+            Vec2 target = p.HasSpecialTarget ? p.SpecialTarget : p.Position + dir * s.CastRange;
             Raise(SimEventKind.AbilityActivated, p.Id, -1, p.Position, s.Damage, (int)AbilitySlot.Special);
 
             if (s.Kind == SpecialKind.RootCage)

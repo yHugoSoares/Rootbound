@@ -39,6 +39,9 @@ sysinfo.txt
 *.app
 crashlytics-build.properties
 
+# Unity crash dumps
+mono_crash*.json
+
 # OS
 .DS_Store
 ._*

@@ -11,6 +11,8 @@ namespace Rootbound.Core
     {
         public Vec2 Move;
         public Vec2 Aim;
+        public Vec2 TargetPoint;
+        public bool HasTargetPoint;
         public bool Primary;
         public bool Special;
         public bool Dodge;

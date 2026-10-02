@@ -17,17 +17,6 @@ namespace Rootbound.Unity
         {
             if (runner == null) runner = FindFirstObjectByType<LocalGameRunner>();
             _session = new OfflineNetworkSession();
-            _session.Changed += OnSessionChanged;
-        }
-
-        private void OnDestroy()
-        {
-            if (_session != null) _session.Changed -= OnSessionChanged;
-        }
-
-        private void OnSessionChanged()
-        {
-            Repaint();
         }
 
         private void OnGUI()

@@ -13,7 +13,11 @@ namespace Rootbound.Unity
         private static readonly Color CageColor = new Color(0.25f, 0.7f, 0.35f);
         private static readonly Color CageIgnitedColor = new Color(1f, 0.45f, 0.1f);
         private static readonly Color ProjectileColor = new Color(1f, 0.75f, 0.2f);
+        private static readonly Color TargetColor = new Color(0.4f, 0.9f, 1f);
+        private static readonly Color TargetClampedColor = new Color(1f, 0.6f, 0.2f);
 
+        private readonly Dictionary<int, Transform> _aimMarkers = new Dictionary<int, Transform>();
+        private readonly Dictionary<int, Renderer> _aimMarkerRenderers = new Dictionary<int, Renderer>();
         private readonly Dictionary<int, Transform> _players = new Dictionary<int, Transform>();
         private readonly Dictionary<int, Transform> _enemies = new Dictionary<int, Transform>();
         private readonly Dictionary<int, Transform> _cages = new Dictionary<int, Transform>();
@@ -34,7 +38,10 @@ namespace Rootbound.Unity
             _enemyRenderers.Clear();
             _cageRenderers.Clear();
             _hitTimers.Clear();
+            _aimMarkers.Clear();
+            _aimMarkerRenderers.Clear();
 
+            bool development = Application.isEditor || Debug.isDebugBuild;
             for (int i = 0; i < sim.Players.Count; i++)
             {
                 PlayerState p = sim.Players[i];
@@ -44,6 +51,15 @@ namespace Rootbound.Unity
                 float radius = p.Spec.BodyRadius * 2f;
                 t.localScale = new Vector3(radius, 0.9f, radius);
                 _players[p.Id] = t;
+
+                if (development)
+                {
+                    GameObject marker = PlaceholderVisuals.CreateCylinder("AimMarker_" + p.Id, TargetColor);
+                    marker.transform.SetParent(transform, false);
+                    marker.transform.localScale = new Vector3(0.6f, 0.01f, 0.6f);
+                    _aimMarkers[p.Id] = marker.transform;
+                    _aimMarkerRenderers[p.Id] = marker.GetComponent<Renderer>();
+                }
             }
 
             for (int i = 0; i < sim.Enemies.Count; i++)
@@ -61,8 +77,25 @@ namespace Rootbound.Unity
         {
             RenderPlayers(sim);
             RenderEnemies(sim, dt);
+            RenderAimMarkers(sim);
             SyncCages(sim);
             SyncProjectiles(sim);
+        }
+
+        private void RenderAimMarkers(CombatSimulation sim)
+        {
+            if (_aimMarkers.Count == 0) return;
+            for (int i = 0; i < sim.Players.Count; i++)
+            {
+                PlayerState p = sim.Players[i];
+                Transform t;
+                if (!_aimMarkers.TryGetValue(p.Id, out t)) continue;
+                bool show = !p.IsDefeated && p.HasAimTarget;
+                t.gameObject.SetActive(show);
+                if (!show) continue;
+                t.position = ArenaSpace.ToWorld(p.AimTarget) + Vector3.up * 0.03f;
+                PlaceholderVisuals.SetColor(_aimMarkerRenderers[p.Id], p.AimTargetClamped ? TargetClampedColor : TargetColor);
+            }
         }
 
         public void ConsumeEvents(IReadOnlyList<SimEvent> events)

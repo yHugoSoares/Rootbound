@@ -93,6 +93,9 @@ namespace Rootbound.Unity
         {
             if (!IsRunning || Simulation == null) return;
 
+            for (int i = 0; i < _adapters.Count; i++)
+                _adapters[i].CaptureFrame(_actions[i].Dodge.WasPressedThisFrame());
+
             float fixedDt = Simulation.DeltaTime;
             _accumulator += Time.deltaTime;
             int steps = 0;
