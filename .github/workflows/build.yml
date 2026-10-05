@@ -28,10 +28,11 @@ jobs:
         id: license
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         run: |
-          if [ -n "$UNITY_LICENSE" ] || { [ -n "$UNITY_EMAIL" ] && [ -n "$UNITY_PASSWORD" ]; }; then
+          if [ -n "$UNITY_LICENSE" ] || { [ -n "$UNITY_SERIAL" ] && [ -n "$UNITY_EMAIL" ] && [ -n "$UNITY_PASSWORD" ]; }; then
             echo "configured=true" >> "$GITHUB_OUTPUT"
           else
             echo "configured=false" >> "$GITHUB_OUTPUT"
@@ -52,9 +53,9 @@ jobs:
         if: steps.license.outputs.configured == 'true'
         uses: game-ci/unity-builder@v4
         env:
-          # Required for a private repository. Set ONE of:
-          #   UNITY_LICENSE  (contents of the .ulf license file)
-          # or UNITY_EMAIL + UNITY_PASSWORD (+ UNITY_SERIAL for Pro).
+          # Required for a private repository (game-ci v4, no activation workflow).
+          # Personal: UNITY_LICENSE (the .ulf contents) + UNITY_EMAIL + UNITY_PASSWORD.
+          # Pro: UNITY_SERIAL + UNITY_EMAIL + UNITY_PASSWORD.
           # Never commit these; configure them as repository secrets.
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}

@@ -88,10 +88,19 @@ prediction** and no prediction is implemented. Do not claim interpolation.
 `.github/workflows/build.yml` uses `game-ci/unity-builder@v4` to build
 **StandaloneOSX** and **StandaloneWindows64** on `master` (and manual dispatch),
 when Unity license secrets are configured. It uploads per-platform artifacts, and
-on `v*` tags creates a GitHub Release.
+on `v*` tags creates a GitHub Release. If no license is configured, the build is
+skipped with a warning (the `secrets` context is checked in a step, not a
+job-level `if`, which GitHub rejects).
 
-Required repository secrets (private repo): `UNITY_LICENSE`, or
-`UNITY_EMAIL` + `UNITY_PASSWORD` (and `UNITY_SERIAL` for Pro). Never commit these.
+License (game-ci v4; there is **no activation workflow** any more): activate a
+Personal license **locally** with Unity Hub (`Preferences > Licenses > Add > Get
+a free personal license`), then use the `.ulf` file:
+`/Library/Application Support/Unity/Unity_lic.ulf` (Mac),
+`C:\ProgramData\Unity\Unity_lic.ulf` (Windows),
+`~/.local/share/unity3d/Unity/Unity_lic.ulf` (Linux). Licenses are not tied to a
+Unity version or platform. Repository secrets: `UNITY_LICENSE` (the `.ulf`
+contents) + `UNITY_EMAIL` + `UNITY_PASSWORD` for Personal; `UNITY_SERIAL` +
+email/password for Pro. Never commit these.
 
 Known limitation: CI builds have **no Fusion App ID** because
 `PhotonAppSettings.asset` is git-ignored, so they run offline/local co-op. To
