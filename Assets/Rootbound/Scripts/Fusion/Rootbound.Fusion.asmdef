@@ -1,16 +1,13 @@
 {
-    "name": "Rootbound.Editor",
-    "rootNamespace": "Rootbound.EditorTools",
+    "name": "Rootbound.Fusion",
+    "rootNamespace": "Rootbound.Fusion",
     "references": [
         "Rootbound.Core",
         "Rootbound.Unity",
-        "Rootbound.Fusion",
-        "Unity.RenderPipelines.Core.Runtime",
-        "Unity.RenderPipelines.Universal.Runtime"
+        "Fusion.Unity",
+        "Unity.InputSystem"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,

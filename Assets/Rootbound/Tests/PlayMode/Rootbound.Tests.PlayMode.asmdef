@@ -4,6 +4,7 @@
     "references": [
         "Rootbound.Core",
         "Rootbound.Unity",
+        "Rootbound.Fusion",
         "Unity.InputSystem",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
