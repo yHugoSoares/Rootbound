@@ -11,9 +11,9 @@ namespace Rootbound.EditorTools
     {
         public static void PerformBuild()
         {
-            InjectPhotonAppId();
+            InjectPhotonAppId(GetArg("-photonAppId", "PHOTON_APP_ID"));
 
-            string targetName = Environment.GetEnvironmentVariable("DUATBORN_BUILD_TARGET");
+            string targetName = GetArg("-duatbornTarget", "DUATBORN_BUILD_TARGET");
             if (string.IsNullOrEmpty(targetName)) targetName = "StandaloneOSX";
 
             BuildTarget target;
@@ -60,9 +60,16 @@ namespace Rootbound.EditorTools
             }
         }
 
-        private static void InjectPhotonAppId()
+        private static string GetArg(string flag, string envVar)
         {
-            string appId = Environment.GetEnvironmentVariable("PHOTON_APP_ID");
+            string[] args = Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length - 1; i++)
+                if (args[i] == flag) return args[i + 1];
+            return Environment.GetEnvironmentVariable(envVar);
+        }
+
+        private static void InjectPhotonAppId(string appId)
+        {
             if (string.IsNullOrEmpty(appId)) return;
 
             PhotonAppSettings settings = PhotonAppSettings.Global;

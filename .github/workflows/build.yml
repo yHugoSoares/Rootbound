@@ -6,6 +6,10 @@ on:
     branches: [master]
     tags: ["v*"]
 
+concurrency:
+  group: build-hosted-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # The `secrets` context is not allowed in a job-level `if`, so license
   # presence is resolved in a preflight job and exposed as an output.
@@ -72,6 +76,11 @@ jobs:
         with:
           unityVersion: 6000.0.84f1
           targetPlatform: ${{ matrix.target }}
+          # Custom method so the Fusion App ID can be injected before building.
+          # game-ci does not forward workflow `env` into the build container, so
+          # values are passed as customParameters instead.
+          buildMethod: Rootbound.EditorTools.RootboundBuild.PerformBuild
+          customParameters: -duatbornTarget ${{ matrix.target }}${{ secrets.PHOTON_APP_ID != '' && format(' -photonAppId {0}', secrets.PHOTON_APP_ID) || '' }}
           buildsPath: build
           allowDirtyBuild: true
 
@@ -97,8 +106,18 @@ jobs:
 
       - name: Package archives
         run: |
+          if [ ! -d artifacts ]; then
+            echo "::error::No artifacts were downloaded; refusing to publish an empty release."
+            exit 1
+          fi
           cd artifacts
-          for d in */; do
+          shopt -s nullglob
+          dirs=(*/)
+          if [ ${#dirs[@]} -eq 0 ]; then
+            echo "::error::Artifacts directory is empty; refusing to publish an empty release."
+            exit 1
+          fi
+          for d in "${dirs[@]}"; do
             name="${d%/}"
             zip -r "${name}-${{ github.ref_name }}.zip" "$name"
           done
@@ -107,4 +126,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: artifacts/*.zip
+          fail_on_unmatched_files: true
           generate_release_notes: true
