@@ -7,8 +7,33 @@ on:
     tags: ["v*"]
 
 jobs:
+  # The `secrets` context is not allowed in a job-level `if`, so license
+  # presence is resolved in a preflight job and exposed as an output.
+  license:
+    name: Check Unity license
+    runs-on: ubuntu-24.04
+    outputs:
+      configured: ${{ steps.check.outputs.configured }}
+    steps:
+      - name: Check Unity license
+        id: check
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        run: |
+          if [ -n "$UNITY_LICENSE" ] || { [ -n "$UNITY_SERIAL" ] && [ -n "$UNITY_EMAIL" ] && [ -n "$UNITY_PASSWORD" ]; }; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::No Unity license secrets configured; skipping build and release. See docs/HANDOFF.md (CI)."
+          fi
+
   build:
     name: Build ${{ matrix.label }}
+    needs: license
+    if: needs.license.outputs.configured == 'true'
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -24,25 +49,7 @@ jobs:
         with:
           lfs: true
 
-      # The `secrets` context is not allowed in a job-level `if`, so the license
-      # presence is checked in a step and exposed as an output.
-      - name: Check Unity license
-        id: license
-        env:
-          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
-          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-        run: |
-          if [ -n "$UNITY_LICENSE" ] || { [ -n "$UNITY_SERIAL" ] && [ -n "$UNITY_EMAIL" ] && [ -n "$UNITY_PASSWORD" ]; }; then
-            echo "configured=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::No Unity license secrets configured; skipping build. See docs/HANDOFF.md (CI)."
-          fi
-
       - name: Cache Library
-        if: steps.license.outputs.configured == 'true'
         uses: actions/cache@v4
         with:
           path: Library
@@ -52,7 +59,6 @@ jobs:
             Library-
 
       - name: Build
-        if: steps.license.outputs.configured == 'true'
         uses: game-ci/unity-builder@v4
         env:
           # Required for a repository build. Set ONE of:
@@ -70,7 +76,6 @@ jobs:
           allowDirtyBuild: true
 
       - name: Upload artifact
-        if: steps.license.outputs.configured == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: Duatborn-${{ matrix.label }}
@@ -79,8 +84,8 @@ jobs:
 
   release:
     name: Publish release
-    if: ${{ startsWith(github.ref, 'refs/tags/v') && needs.build.result == 'success' }}
-    needs: build
+    if: ${{ startsWith(github.ref, 'refs/tags/v') && needs.license.outputs.configured == 'true' && needs.build.result == 'success' }}
+    needs: [license, build]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
