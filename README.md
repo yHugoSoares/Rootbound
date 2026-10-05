@@ -134,7 +134,8 @@ Assets/Rootbound/
 Packages/               Unity package manifest and lock
 ProjectSettings/        Pinned editor version
 Tools/CoreTests/        dotnet test project for the pure core
-docs/                   ARCHITECTURE, DECISIONS, TESTING, HANDOFF, PLAN, MILESTONE3_PLAN
+docs/                   ARCHITECTURE, CREATIVE_DIRECTION, DECISIONS, TESTING,
+                        HANDOFF, PLAN, MILESTONE3_PLAN, MILESTONE4_PLAN
 ```
 
 ## Non-goals for this milestone

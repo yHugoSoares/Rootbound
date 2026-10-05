@@ -164,10 +164,11 @@ method itself is used by the proven local build command.
 
 ### Milestone 3 (implemented)
 
-- Three authored rooms (Rootway 6 Blightlings, Blight Hollow 4+3 Sporelings,
-  Heartwood finale 5+3), a host-authoritative run loop (advance on clear,
-  victory/defeat/R to replay), and one additional enemy type (Sporeling) in
-  mixed groups.
+- Three authored gates (Sun Gate 6 Hollow Sentinels, Shadow Gate 4 Sentinels + 3
+  Fractured Vessels, Horizon Gate finale 5+3), a host-authoritative run loop
+  (advance on clear, victory/defeat/R to replay), and one additional enemy type
+  (the Fractured Vessel, internal `Sporeling`) in mixed groups.
+  Player-facing names: `docs/CREATIVE_DIRECTION.md`.
 - Sporeling death burst has a world-space **expanding ring** sized to
   `EnemySpec.DeathBurstRadius` (derived on every peer from the defeated state, so
   no extra sync).
@@ -486,11 +487,10 @@ each platform is still untested and the macOS build is unsigned.
 
 ## Next smallest milestone
 
-Milestone 4 is **not yet defined**. Candidate first cut, building on the M3 run
-loop: a meta/replayability step (e.g. unlockable starting rites or persistent
-currency between runs) **or** a content widening step (a fourth room/boss, more
-upgrade choices). Agree scope in a `docs/MILESTONE4_PLAN.md` before substantial
-code.
+Milestone 4 scope is a **proposal** in `docs/MILESTONE4_PLAN.md` (boss gate +
+Offerings/Sanctuary metagame), not yet agreed. Its open decisions must be settled
+before substantial code. The smallest first step it recommends is a single
+authored boss gate proven by a core test.
 
 Immediate prerequisite work (not a milestone): validate the `v0.1.0` builds at
 runtime, run the two-machine online test, and collect network-feel numbers under
