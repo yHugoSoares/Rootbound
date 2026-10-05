@@ -77,6 +77,90 @@ namespace Rootbound.Core
             return null;
         }
 
+        public PlayerSnapshot[] CapturePlayers()
+        {
+            PlayerSnapshot[] result = new PlayerSnapshot[_players.Count];
+            for (int i = 0; i < _players.Count; i++)
+            {
+                PlayerState p = _players[i];
+                PlayerSnapshot s = default(PlayerSnapshot);
+                s.Id = p.Id;
+                s.Position = p.Position;
+                s.Facing = p.Facing;
+                s.Health = p.Health.Current;
+                s.MaxHealth = p.Health.Max;
+                s.Defeated = p.Health.IsDefeated;
+                s.PrimaryCooldown = p.PrimaryCooldown.Remaining;
+                s.SpecialCooldown = p.SpecialCooldown.Remaining;
+                s.DodgeCooldown = p.DodgeCooldown.Remaining;
+                s.DodgeDuration = p.Dodge.Duration;
+                s.DodgeActive = p.Dodge.IsActive;
+                s.DodgeDirection = p.Dodge.Direction;
+                result[i] = s;
+            }
+            return result;
+        }
+
+        public CageSnapshot[] CaptureCages()
+        {
+            CageSnapshot[] result = new CageSnapshot[_cages.Count];
+            for (int i = 0; i < _cages.Count; i++)
+            {
+                RootCageState c = _cages[i];
+                CageSnapshot s = default(CageSnapshot);
+                s.Id = c.Id;
+                s.Position = c.Position;
+                s.Radius = c.Radius;
+                s.Remaining = c.Remaining;
+                s.Ignited = c.IsIgnited;
+                s.IgnitedTimeRemaining = c.IgnitedTimeRemaining;
+                result[i] = s;
+            }
+            return result;
+        }
+
+        public void ApplyCages(CageSnapshot[] cages)
+        {
+            _cages.Clear();
+            if (cages == null) return;
+            for (int i = 0; i < cages.Length; i++)
+            {
+                CageSnapshot s = cages[i];
+                RootCageState c = new RootCageState();
+                c.Id = s.Id;
+                c.Position = s.Position;
+                c.Radius = s.Radius;
+                c.Duration = s.Remaining;
+                c.Elapsed = 0f;
+                c.IsIgnited = s.Ignited;
+                c.IgnitedTimeRemaining = s.Ignited ? s.Remaining : 0f;
+                c.MaxIgnitionDuration = c.IgnitedTimeRemaining;
+                _cages.Add(c);
+            }
+        }
+
+        public void ApplyPlayerSnapshots(PlayerSnapshot[] snapshots)
+        {
+            if (snapshots == null) return;
+            int count = snapshots.Length < _players.Count ? snapshots.Length : _players.Count;
+            for (int i = 0; i < count; i++)
+            {
+                PlayerSnapshot s = snapshots[i];
+                PlayerState p = _players[i];
+                p.Position = s.Position;
+                p.Facing = s.Facing;
+                p.Health.Current = s.Health;
+                p.Health.Max = s.MaxHealth;
+                p.Health.IsDefeated = s.Defeated;
+                p.PrimaryCooldown.Remaining = s.PrimaryCooldown;
+                p.SpecialCooldown.Remaining = s.SpecialCooldown;
+                p.DodgeCooldown.Remaining = s.DodgeCooldown;
+                p.Dodge.IsActive = s.DodgeActive;
+                p.Dodge.Duration = s.DodgeDuration;
+                p.Dodge.Direction = s.DodgeDirection;
+            }
+        }
+
         public void Step()
         {
             Step(DeltaTime);
