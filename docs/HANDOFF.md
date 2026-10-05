@@ -5,21 +5,87 @@ headlessly** on the Mac with Unity `6000.0.84f1`. This document records exactly
 what was verified, what was fixed, and what still requires the GUI or hardware.
 Platform policy is in `docs/ENVIRONMENT.md`.
 
-## Current status
+## Current status (Milestone 2 closeout)
 
-- Unity compile: **succeeded**, including with Photon Fusion imported (Editor log
-  `Tundra build success`, no `error CS`).
-- Latest full run (with Fusion imported, Editor closed): core **52/52**, Unity
-  EditMode **52/52**, Unity PlayMode **9/9** (7 gameplay/solo + 2 connection
-  gate, Fusion Multi-Peer over Photon Cloud Host Mode).
-- Arena scene: `Assets/Rootbound/Scenes/CombatArena.unity`; runs in Play Mode
-  headlessly.
-- Local GUI play (keyboard/mouse, single instance): **manually validated** (see
-  "Manual validation"). Gamepad, two-player, standalone builds, and online play:
-  **not validated**.
-- Photon Fusion 2.1.3: **imported** (`Assets/Photon/Fusion`). **App ID is not
-  set** (`AppIdFusion` empty), so host/join cannot connect. Exact steps are in
-  `docs/FUSION_SETUP.md`.
+- Unity compile: **succeeded** with Photon Fusion imported (no `error CS`).
+- Latest full run at `62198f0` (Editor closed): core **54/54**, Unity EditMode
+  **54/54**, Unity PlayMode **11/11**.
+- PlayMode includes a **connection gate** (host code, join, host sees peer, clean
+  leave/shutdown, fresh host/join, failed join, solo fallback) and one combined
+  **combat replication** test (movement, attack, health, enemies, cage,
+  ignition), over Photon Cloud Host Mode via Fusion Multi-Peer.
+- Offline: solo (Root Guardian/Ember Moth) and local two-player co-op remain.
+- Photon Fusion 2.1.3 imported; **App ID is set locally** (git-ignored; not
+  printed). Host/join connects.
+- MPPM 1.6.3 installed; the Fusion installer patch lets virtual players start
+  (confirmed in `Library/VP/mppm*/Logs/Editor.log`).
+
+### What actually passed (recorded separately)
+
+| Item | Status | Evidence |
+| --- | --- | --- |
+| MPPM activation | **Passed** (manual) | User ran two MPPM windows; VP log shows the patched `Fusion: no manifest.json (MPPM virtual project)` skip, no `FileNotFoundException`. |
+| Automated connection/replication | **Passed** | EditMode 54/54, PlayMode 11/11 (Multi-Peer, Photon Cloud Host Mode). |
+| Manual two-peer GUI checks | **Partially observed** | User confirmed peers connect, Player 2 moves, dodge works. Lobby/roster/per-player-creature/aim-marker fixes came **after** that run and are not yet re-confirmed on two windows. |
+| Standalone builds | **Not produced** | Pinned `6000.0.84f1` has only `WindowsStandaloneSupport`; Mac Build Support (IL2CPP) is not installed. See "Standalone validation". |
+| Two-machine tests | **Not tested** | Requires a second machine; steps provided. |
+
+Do not read "the virtual player starts" as "multiplayer passed": activation is a
+prerequisite; the combat replication evidence above is separate, and two-window
+combat is only automated-proven (one-process Multi-Peer), not manually re-run.
+
+### Multiplayer checklist (B)
+
+| Item | Status | How |
+| --- | --- | --- |
+| Host/join by code | Passed | `FusionConnectionGateTests` (Multi-Peer, Photon Cloud). |
+| Player ownership (each controls own) | Passed | Host maps `PlayerRef -> index`; roster test. |
+| Client-originated movement | Partial | Input path plumbed; automated test drives the host override, client input not separately asserted. Manual: move Player 2. |
+| Client-originated attack / special | Partial | Same; host resolves. Manual: press LMB/Q on the client. |
+| Client-originated dodge | Passed (manual) | User confirmed dodge works online after the latch fix. |
+| Damage resolved once | Passed | Attack test: one activation damages once; health replicates. |
+| Cage placement + client ignition | Passed | Combined test: cage replicates, ignition replicates. |
+| Consistent health/cooldowns/outcome | Partial | Health replicated; cooldowns are host-only (not displayed remotely yet); encounter outcome via replicated enemy/defeat state. |
+| Client leave / host leave / fresh session | Passed | Connection gate. |
+| Return to offline solo after shutdown | Passed | Gate asserts `OfflineNetworkSession` still hosts. |
+
+### Standalone validation (D)
+
+**No build exists.** The pinned editor `6000.0.84f1` has only
+`WindowsStandaloneSupport`; **Mac Build Support (IL2CPP)** is not installed.
+
+Exact steps (do not upgrade Unity):
+1. Unity Hub -> Installs -> `6000.0.84f1` -> gear -> *Add modules* ->
+   **Mac Build Support (IL2CPP)** (and *Mac Build Support (Mono)* if offered).
+2. `File > Build Settings` -> platform **macOS** -> enable **Development Build**
+   -> *Build* to `Builds/RootboundDev.app`.
+3. The App ID is compiled in from `PhotonAppSettings.asset` (client-side); do not
+   print it. Ensure `Assets/Rootbound/Prefabs/FusionMatch.prefab` is included
+   (it is referenced by `Runner.Spawn("FusionMatch", ...)`).
+4. Test Editor host -> standalone client, then reverse roles.
+5. Two-machine test: copy the build (or build on the second machine) and join the
+   same session code over the internet.
+
+The `6000.6.4f1` editor has `MacStandaloneSupport`, but using it would migrate the
+project off the pinned version — not done.
+
+### Network feel (E)
+
+Fusion's supported simulator is `NetworkSimulationConfiguration`, exposed via
+`NetworkProjectConfig.NetworkConditions` and `StartGameArgs.Config` (fields:
+`Enabled`, `DelayMin/Max`, `LossChanceMin/Max`, `AdditionalJitter`,
+`AdditionalLoss`). To use it: set `NetworkConditions` in
+`Assets/Photon/Fusion/Resources/NetworkProjectConfig.fusion` (or pass a cloned
+config in `StartGameArgs.Config`), then host/join.
+
+Status: **not yet collected.** No configured conditions were run, so there are no
+observed numbers for correctness, remote-state smoothness, or local input
+responsiveness. Remote state is applied as-is (host-confirmed); **this is not
+prediction** and no prediction is implemented. Do not claim interpolation.
+
+### Milestone 3
+
+See `docs/MILESTONE3_PLAN.md` (plan only, not implemented).
 
 ## Milestone 2 dependency verification (Fusion import)
 
