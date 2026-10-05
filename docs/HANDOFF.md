@@ -87,7 +87,8 @@ prediction** and no prediction is implemented. Do not claim interpolation.
 
 `.github/workflows/build.yml` uses `game-ci/unity-builder@v4` to build
 **StandaloneOSX** and **StandaloneWindows64** on `master` (and manual dispatch),
-uploads per-platform artifacts, and on `v*` tags creates a GitHub Release.
+when Unity license secrets are configured. It uploads per-platform artifacts, and
+on `v*` tags creates a GitHub Release.
 
 Required repository secrets (private repo): `UNITY_LICENSE`, or
 `UNITY_EMAIL` + `UNITY_PASSWORD` (and `UNITY_SERIAL` for Pro). Never commit these.

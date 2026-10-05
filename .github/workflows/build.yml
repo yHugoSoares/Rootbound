@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     name: Build ${{ matrix.targetPlatform }}
+    if: ${{ secrets.UNITY_LICENSE != '' || (secrets.UNITY_EMAIL != '' && secrets.UNITY_PASSWORD != '') }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
