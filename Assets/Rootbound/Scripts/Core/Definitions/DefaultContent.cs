@@ -90,6 +90,84 @@ namespace Rootbound.Core
             return c;
         }
 
+        public static ArenaSpec[] DefaultRun()
+        {
+            return new[]
+            {
+                MakeArena("room_1", "Rootway", false, Group(Blightling(), 6)),
+                MakeArena("room_2", "Blight Hollow", false, Group(Blightling(), 4), Group(Sporeling(), 3)),
+                MakeArena("room_3", "Heartwood", true, Group(Blightling(), 5), Group(Sporeling(), 3))
+            };
+        }
+
+        public static Vec2[] UpgradePositions()
+        {
+            return new[] { new Vec2(-3f, 0f), new Vec2(0f, 3f), new Vec2(3f, 0f) };
+        }
+
+        public static UpgradeSpec[] UpgradeCatalog()
+        {
+            UpgradeSpec vigor = new UpgradeSpec();
+            vigor.Id = "up_vigor";
+            vigor.DisplayName = "Root Vigor (+30 HP)";
+            vigor.Kind = UpgradeKind.MaxHealth;
+            vigor.Amount = 30f;
+
+            UpgradeSpec edge = new UpgradeSpec();
+            edge.Id = "up_edge";
+            edge.DisplayName = "Sharpened Edge (+6 damage)";
+            edge.Kind = UpgradeKind.PrimaryDamage;
+            edge.Amount = 6f;
+
+            UpgradeSpec fleet = new UpgradeSpec();
+            fleet.Id = "up_fleet";
+            fleet.DisplayName = "Fleet Step (+0.6 speed)";
+            fleet.Kind = UpgradeKind.MoveSpeed;
+            fleet.Amount = 0.6f;
+
+            return new[] { vigor, edge, fleet };
+        }
+
+        private static ArenaEnemyGroup Group(EnemySpec enemy, int count)
+        {
+            ArenaEnemyGroup group = new ArenaEnemyGroup();
+            group.Enemy = enemy;
+            group.Count = count;
+            return group;
+        }
+
+        private static ArenaSpec MakeArena(string id, string name, bool finale, params ArenaEnemyGroup[] groups)
+        {
+            ArenaSpec arena = new ArenaSpec();
+            arena.Id = id;
+            arena.DisplayName = name;
+            arena.Groups = groups;
+            int total = 0;
+            for (int i = 0; i < groups.Length; i++) total += groups[i].Count;
+            arena.EnemyCount = total;
+            arena.Enemy = groups.Length > 0 ? groups[0].Enemy : Blightling();
+            arena.IsFinale = finale;
+            return arena;
+        }
+
+        public static EnemySpec Sporeling()
+        {
+            EnemySpec e = new EnemySpec();
+            e.Id = "sporeling";
+            e.DisplayName = "Sporeling";
+            e.MaxHealth = 22f;
+            e.MoveSpeed = 4.2f;
+            e.BodyRadius = 0.3f;
+            e.AttackRange = 1.0f;
+            e.AttackArcDegrees = 90f;
+            e.AttackDamage = 6f;
+            e.AttackCooldown = 0.9f;
+            e.AttackWindup = 0.25f;
+            e.AttackActive = 0.08f;
+            e.AttackRecovery = 0.2f;
+            return e;
+        }
+
         public static EnemySpec Blightling()
         {
             EnemySpec e = new EnemySpec();

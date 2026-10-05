@@ -16,6 +16,7 @@ namespace Rootbound.Core
         public bool Primary;
         public bool Special;
         public bool Dodge;
+        public bool Interact;
     }
 
     public enum SimEventKind

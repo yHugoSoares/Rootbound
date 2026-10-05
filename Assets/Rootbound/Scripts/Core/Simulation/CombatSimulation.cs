@@ -236,12 +236,15 @@ namespace Rootbound.Core
                 Vec2 spawn = HasSpawn(_setup.EnemySpawns, i)
                     ? _setup.EnemySpawns[i]
                     : DefaultEnemySpawn(i, count);
+                EnemySpec spec = _setup.EnemySpecs != null && i < _setup.EnemySpecs.Length && _setup.EnemySpecs[i] != null
+                    ? _setup.EnemySpecs[i]
+                    : _setup.EnemySpec;
                 EnemyState e = new EnemyState();
                 e.Id = _nextEnemyId++;
-                e.Spec = _setup.EnemySpec;
+                e.Spec = spec;
                 e.Position = spawn;
                 e.Facing = new Vec2(0f, -1f);
-                e.Health = Health.Create(_setup.EnemySpec.MaxHealth);
+                e.Health = Health.Create(spec.MaxHealth);
                 _enemies.Add(e);
             }
         }

@@ -29,6 +29,57 @@ namespace Rootbound.Core
             }
         }
 
+        public EnemySpec[] EnemySpecs;
+
+        public static CombatSetup FromArena(CreatureKind[] creatures, ArenaSpec arena, bool active)
+        {
+            int count = creatures == null || creatures.Length == 0 ? 1 : creatures.Length;
+            CreatureSpec[] specs = new CreatureSpec[count];
+            for (int i = 0; i < count; i++)
+            {
+                CreatureKind kind = creatures != null && i < creatures.Length ? creatures[i] : CreatureKind.RootGuardian;
+                specs[i] = kind == CreatureKind.EmberMoth ? DefaultContent.EmberMoth() : DefaultContent.RootGuardian();
+            }
+            return FromArena(specs, arena, active);
+        }
+
+        public static CombatSetup FromArena(CreatureSpec[] players, ArenaSpec arena, bool active)
+        {
+            CombatSetup s = new CombatSetup();
+            s.PlayerSpecs = players != null && players.Length > 0 ? players : new[] { DefaultContent.RootGuardian() };
+            ApplyArena(s, arena, active);
+            return s;
+        }
+
+        private static void ApplyArena(CombatSetup s, ArenaSpec arena, bool active)
+        {
+            if (arena == null)
+            {
+                s.EnemySpec = DefaultContent.Blightling();
+                s.EnemyCount = 0;
+                return;
+            }
+
+            if (arena.Groups != null && arena.Groups.Length > 0)
+            {
+                System.Collections.Generic.List<EnemySpec> list = new System.Collections.Generic.List<EnemySpec>();
+                for (int g = 0; g < arena.Groups.Length; g++)
+                {
+                    ArenaEnemyGroup group = arena.Groups[g];
+                    if (group == null || group.Enemy == null) continue;
+                    for (int i = 0; i < group.Count; i++) list.Add(group.Enemy);
+                }
+                s.EnemySpecs = list.ToArray();
+                s.EnemyCount = active ? list.Count : 0;
+                s.EnemySpec = arena.Groups[0].Enemy != null ? arena.Groups[0].Enemy : DefaultContent.Blightling();
+            }
+            else
+            {
+                s.EnemySpec = arena.Enemy != null ? arena.Enemy : DefaultContent.Blightling();
+                s.EnemyCount = active ? arena.EnemyCount : 0;
+            }
+        }
+
         public static CombatSetup DefaultSolo()
         {
             return DefaultSolo(CreatureKind.RootGuardian);
