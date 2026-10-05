@@ -1,0 +1,79 @@
+name: Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+    tags: ["v*"]
+
+jobs:
+  build:
+    name: Build ${{ matrix.targetPlatform }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        targetPlatform:
+          - StandaloneOSX
+          - StandaloneWindows64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Cache Library
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-${{ matrix.targetPlatform }}-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-${{ matrix.targetPlatform }}-
+            Library-
+
+      - name: Build
+        uses: game-ci/unity-builder@v4
+        env:
+          # Required for a private repository. Set ONE of:
+          #   UNITY_LICENSE  (contents of the .ulf license file)
+          # or UNITY_EMAIL + UNITY_PASSWORD (+ UNITY_SERIAL for Pro).
+          # Never commit these; configure them as repository secrets.
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
+          # Note: CI builds have no Fusion App ID because PhotonAppSettings.asset
+          # is git-ignored. They run offline / local co-op. To enable online in
+          # CI, inject secrets.PHOTON_APP_ID via a custom buildMethod (see
+          # docs/HANDOFF.md "CI").
+        with:
+          unityVersion: 6000.0.84f1
+          targetPlatform: ${{ matrix.targetPlatform }}
+          buildsPath: build
+          allowDirtyBuild: true
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Rootbound-${{ matrix.targetPlatform }}
+          path: build/${{ matrix.targetPlatform }}
+          if-no-files-found: error
+
+  release:
+    name: Publish release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
+          generate_release_notes: true

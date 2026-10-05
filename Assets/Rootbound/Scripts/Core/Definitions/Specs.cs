@@ -99,5 +99,7 @@ namespace Rootbound.Core
         public float AttackWindup;
         public float AttackActive;
         public float AttackRecovery;
+        public float DeathBurstRadius;
+        public float DeathBurstDamage;
     }
 }

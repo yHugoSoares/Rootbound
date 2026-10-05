@@ -704,7 +704,24 @@ namespace Rootbound.Core
             if (applied > 0f)
                 Raise(SimEventKind.DamageDealt, sourceId, e.Id, e.Position, applied, 0);
             if (e.Health.IsDefeated)
+            {
                 Raise(SimEventKind.EntityDefeated, sourceId, e.Id, e.Position, 0f, 0);
+                ApplyDeathBurst(e);
+            }
+        }
+
+        private void ApplyDeathBurst(EnemyState e)
+        {
+            EnemySpec spec = e.Spec;
+            if (spec == null || spec.DeathBurstRadius <= 0f || spec.DeathBurstDamage <= 0f) return;
+            float sqr = spec.DeathBurstRadius * spec.DeathBurstRadius;
+            for (int i = 0; i < _players.Count; i++)
+            {
+                PlayerState p = _players[i];
+                if (p.Health.IsDefeated) continue;
+                if (Vec2.SqrDistance(p.Position, e.Position) > sqr) continue;
+                ApplyDamageToPlayer(p, spec.DeathBurstDamage, e.Id);
+            }
         }
 
         private void Raise(SimEventKind kind, int sourceId, int targetId, Vec2 position, float amount, int extraId)

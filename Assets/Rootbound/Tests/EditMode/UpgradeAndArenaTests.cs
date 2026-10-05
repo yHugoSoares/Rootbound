@@ -65,6 +65,37 @@ namespace Rootbound.Tests
         }
 
         [Test]
+        public void SporelingDeathBurstDamagesNearbyPlayer()
+        {
+            EnemySpec spore = DefaultContent.Sporeling();
+            spore.AttackDamage = 0f;
+
+            CombatSetup setup = new CombatSetup();
+            setup.PlayerSpecs = new[] { DefaultContent.RootGuardian() };
+            setup.EnemySpec = spore;
+            setup.EnemySpecs = new[] { spore };
+            setup.EnemyCount = 1;
+            setup.PlayerSpawns = new[] { Vec2.Zero };
+            setup.EnemySpawns = new[] { new Vec2(0f, 1f) };
+
+            CombatSimulation sim = new CombatSimulation(setup);
+            float before = sim.GetPlayer(0).Health.Current;
+
+            PlayerCommand strike = default(PlayerCommand);
+            strike.Aim = new Vec2(0f, 1f);
+            strike.Primary = true;
+            for (int i = 0; i < 30; i++)
+            {
+                sim.SubmitCommand(0, strike);
+                sim.Step();
+            }
+
+            Assert.That(sim.Enemies[0].Health.IsDefeated, Is.True);
+            Assert.That(sim.GetPlayer(0).Health.Current, Is.LessThan(before),
+                "Sporeling death burst did not damage the nearby player.");
+        }
+
+        [Test]
         public void LobbyArenaSpawnsNoEnemies()
         {
             ArenaSpec room = DefaultContent.DefaultRun()[0];

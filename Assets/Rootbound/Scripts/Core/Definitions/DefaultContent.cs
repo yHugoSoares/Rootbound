@@ -165,6 +165,8 @@ namespace Rootbound.Core
             e.AttackWindup = 0.25f;
             e.AttackActive = 0.08f;
             e.AttackRecovery = 0.2f;
+            e.DeathBurstRadius = 2.0f;
+            e.DeathBurstDamage = 8f;
             return e;
         }
 

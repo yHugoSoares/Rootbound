@@ -83,6 +83,22 @@ observed numbers for correctness, remote-state smoothness, or local input
 responsiveness. Remote state is applied as-is (host-confirmed); **this is not
 prediction** and no prediction is implemented. Do not claim interpolation.
 
+### CI (GitHub Actions)
+
+`.github/workflows/build.yml` uses `game-ci/unity-builder@v4` to build
+**StandaloneOSX** and **StandaloneWindows64** on `master` (and manual dispatch),
+uploads per-platform artifacts, and on `v*` tags creates a GitHub Release.
+
+Required repository secrets (private repo): `UNITY_LICENSE`, or
+`UNITY_EMAIL` + `UNITY_PASSWORD` (and `UNITY_SERIAL` for Pro). Never commit these.
+
+Known limitation: CI builds have **no Fusion App ID** because
+`PhotonAppSettings.asset` is git-ignored, so they run offline/local co-op. To
+enable online in CI, add a `PHOTON_APP_ID` secret and a custom `buildMethod` that
+writes it into `PhotonAppSettings.Global.AppIdFusion` before building (not wired
+yet, to avoid guessing game-ci's custom-method contract). Not verified: no
+workflow run has been executed here; Unity builds have not been produced.
+
 ### Milestone 3 (implemented)
 
 - Three authored rooms (Rootway 6 Blightlings, Blight Hollow 4+3 Sporelings,
