@@ -1,9 +1,9 @@
 # Handoff
 
-Milestone 1 (local combat arena) has now been **imported, compiled, and run
-headlessly** on the Mac with Unity `6000.0.84f1`. This document records exactly
-what was verified, what was fixed, and what still requires the GUI or hardware.
-Platform policy is in `docs/ENVIRONMENT.md`.
+The project has been **imported, compiled, run, tested, and built headlessly** on
+the Mac with Unity `6000.0.84f1`, through Milestone 3. This document records
+exactly what was verified, what was fixed, and what still requires the GUI or
+hardware. Platform policy is in `docs/ENVIRONMENT.md`.
 
 > Naming: the game is branded **Duatborn** (no subtitle). Historical titles
 > "Rootbound: Fractured Realms" and "Dawnkeepers: Gates of Duat" are superseded.
@@ -11,11 +11,11 @@ Platform policy is in `docs/ENVIRONMENT.md`.
 > `Assets/Rootbound` path keep the "Rootbound" name; see
 > `docs/CREATIVE_DIRECTION.md`.
 
-## Current status (Milestone 2 closeout)
+## Current status (Milestone 3 complete)
 
 - Unity compile: **succeeded** with Photon Fusion imported (no `error CS`).
-- Latest full run (Editor closed, Milestone 3): core **73/73**, Unity EditMode
-  **73/73**, Unity PlayMode **11/11**.
+- Latest full run (Editor closed, Milestone 3): core **75/75**, Unity EditMode
+  **75/75**, Unity PlayMode **11/11** (headless, Unity `6000.0.84f1`).
 - **Multiplayer manually validated** by the developer in a two-peer session
   (host/join, ownership, client combat, cage/ignition, ground pickups, return to
   menu). No machine/build/network-condition measurements were captured.
@@ -34,9 +34,9 @@ Platform policy is in `docs/ENVIRONMENT.md`.
 | Item | Status | Evidence |
 | --- | --- | --- |
 | MPPM activation | **Passed** (manual) | User ran two MPPM windows; VP log shows the patched `Fusion: no manifest.json (MPPM virtual project)` skip, no `FileNotFoundException`. |
-| Automated connection/replication | **Passed** | EditMode 54/54, PlayMode 11/11 (Multi-Peer, Photon Cloud Host Mode). |
+| Automated connection/replication | **Passed** | EditMode 75/75, PlayMode 11/11 (Multi-Peer, Photon Cloud Host Mode). |
 | Manual two-peer GUI checks | **Partially observed** | User confirmed peers connect, Player 2 moves, dodge works. Lobby/roster/per-player-creature/aim-marker fixes came **after** that run and are not yet re-confirmed on two windows. |
-| Standalone builds | **Not produced** | Pinned `6000.0.84f1` has only `WindowsStandaloneSupport`; Mac Build Support (IL2CPP) is not installed. See "Standalone validation". |
+| Standalone builds | **Produced** (runtime untested) | `6000.0.84f1` now has `MacStandaloneSupport` installed. macOS (arm64) and Windows builds produced locally and published as `v0.1.0`. See "Standalone validation". |
 | Two-machine tests | **Not tested** | Requires a second machine; steps provided. |
 
 Do not read "the virtual player starts" as "multiplayer passed": activation is a
@@ -60,23 +60,37 @@ combat is only automated-proven (one-process Multi-Peer), not manually re-run.
 
 ### Standalone validation (D)
 
-**No build exists.** The pinned editor `6000.0.84f1` has only
-`WindowsStandaloneSupport`; **Mac Build Support (IL2CPP)** is not installed.
+**Builds exist.** `6000.0.84f1` now has **MacStandaloneSupport** installed.
+Local headless builds were produced with
+`Rootbound.EditorTools.RootboundBuild.PerformBuild`
+(`DUATBORN_BUILD_TARGET=StandaloneOSX` / `StandaloneWindows64`) and published as
+`v0.1.0`:
 
-Exact steps (do not upgrade Unity):
-1. Unity Hub -> Installs -> `6000.0.84f1` -> gear -> *Add modules* ->
-   **Mac Build Support (IL2CPP)** (and *Mac Build Support (Mono)* if offered).
-2. `File > Build Settings` -> platform **macOS** -> enable **Development Build**
-   -> *Build* to `Builds/DuatbornDev.app`.
-3. The App ID is compiled in from `PhotonAppSettings.asset` (client-side); do not
-   print it. Ensure `Assets/Rootbound/Prefabs/FusionMatch.prefab` is included
-   (it is referenced by `Runner.Spawn("FusionMatch", ...)`).
-4. Test Editor host -> standalone client, then reverse roles.
-5. Two-machine test: copy the build (or build on the second machine) and join the
+- macOS: `build/StandaloneOSX/Duatborn.app` — arm64, **unsigned**.
+- Windows: `build/StandaloneWindows64/Duatborn.exe` — x64.
+
+Smoke test (this machine): the macOS player was launched headlessly
+(`-batchmode -nographics`) and initialized the engine and managed assemblies with
+no early crash; the `CombatArena` scene is bundled as `level0` in both players and
+the Windows player is a PE32+ x86-64 GUI executable. This is **not** a gameplay or
+GUI validation.
+
+Still untested: playing either build (menu, movement, combat, online);
+Editor-host -> standalone-client and the reverse; and two-machine play over the
+internet. Exact steps (do not upgrade Unity):
+1. Run the published `v0.1.0` build on each platform (macOS: right-click **Open**
+   or clear the quarantine attribute, since it is unsigned).
+2. Editor host -> standalone client, then reverse roles.
+3. Two-machine test: copy the build (or build on the second machine) and join the
    same session code over the internet.
 
-The `6000.6.4f1` editor has `MacStandaloneSupport`, but using it would migrate the
-project off the pinned version — not done.
+The App ID is compiled in from the git-ignored `PhotonAppSettings.asset`
+(client-side); do not print it. Ensure
+`Assets/Rootbound/Prefabs/FusionMatch.prefab` is included (it is referenced by
+`Runner.Spawn("FusionMatch", ...)`).
+
+The `6000.6.4f1` editor also has `MacStandaloneSupport`; the project stays on the
+pinned `6000.0.84f1` and was not migrated.
 
 ### Network feel (E)
 
@@ -94,42 +108,59 @@ prediction** and no prediction is implemented. Do not claim interpolation.
 
 ### CI (GitHub Actions)
 
-`.github/workflows/build.yml` uses `game-ci/unity-builder@v4` to build
-**StandaloneOSX** and **StandaloneWindows64** on `master` (and manual dispatch),
-when Unity license secrets are configured. It uploads per-platform artifacts
-`Duatborn-macOS` / `Duatborn-Windows`, and on `v*` tags creates a GitHub Release
-with versioned archives. If no license is configured, the build is skipped with a
-warning (the `secrets` context is checked in a step, not a job-level `if`, which
-GitHub rejects). Builds output `build/<target>/Duatborn.app` (macOS) and
-`build/<target>/Duatborn.exe` (Windows); `Unity Product Name` is `Duatborn`.
+Two workflows build **StandaloneOSX** and **StandaloneWindows64**:
 
-License (game-ci v4; there is **no activation workflow** any more): activate a
-Personal license **locally** with Unity Hub (`Preferences > Licenses > Add > Get
-a free personal license`), then use the `.ulf` file:
-`/Library/Application Support/Unity/Unity_lic.ulf` (Mac),
+- `.github/workflows/build.yml` (GitHub-hosted `game-ci/unity-builder@v4`) —
+  builds on `master` and manual dispatch, and publishes a release on `v*` tags. A
+  preflight `license` job resolves secret presence; without a license the `build`
+  **and** `release` jobs are skipped together. (Previously the release job ran
+  against missing artifacts and failed on `cd artifacts`.) Uploads
+  `Duatborn-macOS` / `Duatborn-Windows`.
+- `.github/workflows/build-selfhosted.yml` (self-hosted macOS runner) — uses a
+  locally installed and licensed editor, so **no license secrets are needed**.
+  Recommended when a licensed Mac is available.
+
+Enable **one** path (or expect two competing release jobs on a tag). Both cancel
+superseded runs via `concurrency` and refuse to publish an empty release.
+
+The build method is `Rootbound.EditorTools.RootboundBuild.PerformBuild`. It reads
+the target from `-duatbornTarget` (fallback `DUATBORN_BUILD_TARGET`) and the
+Fusion App ID from `-photonAppId` (fallback `PHOTON_APP_ID`). game-ci does **not**
+forward workflow `env` into the build container, so the hosted workflow passes
+these as `customParameters`; the self-hosted workflow uses environment variables.
+When an App ID is supplied it is injected into `PhotonAppSettings` before the
+build, so CI players can go online. Builds output
+`build/<target>/Duatborn.app` (macOS) and `build/<target>/Duatborn.exe` (Windows);
+`Unity Product Name` is `Duatborn`.
+
+To enable the hosted path, add the license secret(s) (there is **no activation
+workflow** any more): activate a Personal license **locally** with Unity Hub
+(`Preferences > Licenses > Add > Get a free personal license`), then add the
+`.ulf` file contents:
+
+```
+gh secret set UNITY_LICENSE < "/Library/Application Support/Unity/Unity_lic.ulf"
+gh secret set UNITY_EMAIL   --body "you@example.com"
+gh secret set UNITY_PASSWORD
+gh secret set PHOTON_APP_ID   # optional, for online CI builds
+```
+
+`.ulf` locations: `/Library/Application Support/Unity/Unity_lic.ulf` (Mac),
 `C:\ProgramData\Unity\Unity_lic.ulf` (Windows),
 `~/.local/share/unity3d/Unity/Unity_lic.ulf` (Linux). Licenses are not tied to a
-Unity version or platform. Repository secrets: `UNITY_LICENSE` (the `.ulf`
-contents) + `UNITY_EMAIL` + `UNITY_PASSWORD` for Personal; `UNITY_SERIAL` +
-email/password for Pro. Never commit these.
+Unity version or platform. For Pro, use `UNITY_SERIAL` + email/password instead of
+`UNITY_LICENSE`. Never commit these.
 
-Alternative (recommended on a licensed machine): `.github/workflows/build-selfhosted.yml`
-(the build target is passed via the `DUATBORN_BUILD_TARGET` environment variable)
-runs on a **self-hosted macOS runner** using its locally installed and licensed
-Unity editor, so **no license secrets are needed**. Setup: register the machine as
-a GitHub Actions runner with the labels `self-hosted` and `macOS`; install Unity
-`6000.0.84f1` with **Mac + Windows build support**; optionally add the
-`PHOTON_APP_ID` secret for online builds, and a `UNITY_PATH` repository variable
-if the editor isn't at the default Hub path. It invokes
-`Rootbound.EditorTools.RootboundBuild.PerformBuild` (which also injects
-`PHOTON_APP_ID` into `PhotonAppSettings` when set).
+To enable the self-hosted path instead: register the machine as a GitHub Actions
+runner with the labels `self-hosted` and `macOS`; install Unity `6000.0.84f1` with
+**Mac + Windows build support**; optionally add the `PHOTON_APP_ID` secret for
+online builds, and a `UNITY_PATH` repository variable if the editor isn't at the
+default Hub path. No runner is currently registered, so tag builds stay queued.
 
-Known limitation: CI builds have **no Fusion App ID** because
-`PhotonAppSettings.asset` is git-ignored, so they run offline/local co-op. To
-enable online in CI, add a `PHOTON_APP_ID` secret and a custom `buildMethod` that
-writes it into `PhotonAppSettings.Global.AppIdFusion` before building (not wired
-yet, to avoid guessing game-ci's custom-method contract). Not verified: no
-workflow run has been executed here; Unity builds have not been produced.
+Status: no CI-driven build has succeeded yet. The published `v0.1.0` artifacts
+were produced locally and attached by hand (see "Standalone validation"). The
+hosted `buildMethod`/`customParameters` path is therefore also unexercised; the
+method itself is used by the proven local build command.
 
 ### Milestone 3 (implemented)
 
@@ -148,7 +179,7 @@ workflow run has been executed here; Unity builds have not been produced.
   world-space effect label shown when a local player is within ~3 m; collect with
   **E** (gamepad North/Y). Host-authoritative online (pickups replicated;
   picking player receives the upgrade). Offline co-op supported.
-- Tests: core 68/68, EditMode 68/68, PlayMode 11/11. Online pickup collection is
+- Tests: core 75/75, EditMode 75/75, PlayMode 11/11. Online pickup collection is
   code-complete but not yet manually re-confirmed on two windows.
 - Original plan: `docs/MILESTONE3_PLAN.md`.
 
@@ -425,8 +456,8 @@ gamepad. Both maps bind `<Gamepad>` generically, so two simultaneous gamepads ar
 not distinctly assigned; this is a known limitation. This has **not** been tested
 with physical hardware here.
 
-Local two-player simulation is not online multiplayer. Fusion is not installed
-and was intentionally not integrated.
+Local two-player simulation is distinct from online multiplayer. Photon Fusion
+2.1.3 is now integrated (Host Mode); see the multiplayer sections above.
 
 ## Still unverified (requires hardware, builds, or Fusion)
 
@@ -435,36 +466,32 @@ and was intentionally not integrated.
 - Encounter-cleared / all-players-defeated overlays and `R` restart in the GUI.
 - Long-session exception soak; frame-rate consistency at 30/60/144 FPS.
 - URP visual quality under scrutiny.
-- macOS and Windows standalone builds.
-- Online multiplayer (Photon Fusion 2 is not installed).
+- Standalone builds at runtime (built and published as `v0.1.0`, not yet launched).
+- Cross-machine online play (automated Multi-Peer passes; no second machine test).
 
 ## Build status
 
-No build was produced. The pinned editor `6000.0.84f1` has only
-**WindowsStandaloneSupport**; **Mac Build Support (IL2CPP) is not installed**, so
-a macOS player cannot be built with it. The `6000.6.4f1` editor *does* include
-`MacStandaloneSupport`, but building with it would migrate the project off the
-pinned version. To build a macOS player without migrating, add **Mac Build
-Support (IL2CPP)** to `6000.0.84f1` via Unity Hub. Windows build/runtime
-validation remains pending.
+macOS (arm64) and Windows (x64) players were built locally and published as
+`v0.1.0`; see "Standalone validation (D)" above for paths and caveats. Runtime on
+each platform is still untested and the macOS build is unsigned.
 
 ## Blockers
 
-1. **Mac build module missing** for `6000.0.84f1` (manual Hub install required).
-2. **No gamepad connected** in this environment, so player 2 input and
+1. **No gamepad connected** in this environment, so player 2 input and
    two-player local play are untested.
-3. **Photon Fusion 2 not installed, no App ID.** Online play is not implemented.
-   Install Fusion 2.1.3 (Build 2390) and configure an App ID per
-   `docs/FUSION_SETUP.md`; Unity 6.0.x is officially supported. `Assets/Photon`
-   must not be added to version control with a populated App ID.
-4. Local prototype checkpoint committed; generated assets, `.meta`, and
-   `ProjectSettings` are now tracked.
+2. **No second machine** for the cross-machine online test.
+3. **Standalone runtime untested** — builds exist but have not been launched.
+4. **CI releases are manual** — no Unity license secrets and no registered
+   self-hosted runner, so tag-triggered builds cannot publish automatically.
 
 ## Next smallest milestone
 
-Milestone 2: two separate instances create/join a Photon Fusion **Host Mode**
-session, each controlling its own creature with consistent replicated combat
-state. The integration plan, authority model, and prediction approach (documented
-when the milestone starts in `docs/ARCHITECTURE.md`) must be agreed before
-substantial code. Local two-player and gamepad should be validated first if
-hardware is available.
+Milestone 4 is **not yet defined**. Candidate first cut, building on the M3 run
+loop: a meta/replayability step (e.g. unlockable starting rites or persistent
+currency between runs) **or** a content widening step (a fourth room/boss, more
+upgrade choices). Agree scope in a `docs/MILESTONE4_PLAN.md` before substantial
+code.
+
+Immediate prerequisite work (not a milestone): validate the `v0.1.0` builds at
+runtime, run the two-machine online test, and collect network-feel numbers under
+Fusion `NetworkSimulationConfiguration` (see "Network feel (E)").

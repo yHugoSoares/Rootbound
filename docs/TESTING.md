@@ -18,7 +18,7 @@
 dotnet test Tools/CoreTests/CoreTests.csproj
 ```
 
-Result: **Passed: 47, Failed: 0, Skipped: 0, Total: 47.**
+Result: **Passed: 75, Failed: 0, Skipped: 0, Total: 75.**
 
 ### 2. Unity import and compile
 
@@ -33,7 +33,7 @@ Unity -batchmode -nographics -projectPath . -runTests -testPlatform EditMode \
   -testResults /tmp/rb-edit.xml
 ```
 
-Result: **total=47, passed=47, failed=0, skipped=0.**
+Result: **total=75, passed=75, failed=0, skipped=0.**
 
 ### 4. Unity PlayMode tests
 
@@ -42,7 +42,9 @@ Unity -batchmode -nographics -projectPath . -runTests -testPlatform PlayMode \
   -testResults /tmp/rb-play.xml
 ```
 
-Result: **total=3, passed=3, failed=0.**
+Result: **total=11, passed=11, failed=0, skipped=0.**
+
+Arena / runner (`ArenaPlayModeTests`), 7:
 
 - `ArenaSceneRunsLocalSession` - loads the generated scene and asserts wiring,
   creature spawning from ScriptableObjects, simulation stepping, Blightling
@@ -50,11 +52,25 @@ Result: **total=3, passed=3, failed=0.**
 - `RunnerAdvancesCooldownsWithoutInput` - starts a session through the real
   `LocalGameRunner`, forces the player's primary/special/dodge cooldowns to
   non-zero, waits 1 second with no input, and asserts all three recover and
-  `ElapsedTime` advances. This is the integration test through the
-  `LocalGameRunner` path.
+  `ElapsedTime` advances.
 - `DodgePressIsLatchedAcrossFramesWithoutSimulationSteps` - drives the real
   `PlayerInputAdapter` (no devices) across a frame with no fixed step and asserts
   the discrete dodge press survives and is consumed exactly once.
+- `CameraFocusesConfiguredLocalPlayer` - local player selection focuses the
+  camera on that player.
+- `SoloRunnerSpawnsOneSelectedCreatureAndCycles` - solo spawns exactly the
+  selected creature and completes a cycle.
+- `SoloPauseStopsLocalSimulation` - `Esc` pauses the offline simulation.
+- `OnlineHostModeIgnoresPause` - pause does not affect an online host session.
+
+Fusion multi-peer, 4 (`FusionConnectionGateTests` x2,
+`FusionMovementReplicationTests`, `FusionInstallerPatchPresenceTests`):
+
+- `HostCreatesCodeClientJoinsAndBothLeaveCleanly` - the connection gate.
+- `FreshHostJoinFailedJoinAndSoloFallback` - reconnect, failed join, solo fallback.
+- `AllCombatStateReplicatesToClient` - combined replication (movement, attack,
+  health, enemies, cage, ignition).
+- `FusionInstallerHasMppmPatchMarker` - confirms the MPPM patch is present.
 
 These runs execute the real scene at runtime but are not visual/GUI checks.
 
@@ -211,7 +227,8 @@ Not validated - do not describe these as working:
 - [ ] Same-machine local two-player session (Player 2 requires a gamepad).
 - [ ] No repeated exceptions across a long manual session.
 - [ ] Movement consistency at 30/60/144 FPS.
-- [ ] macOS or Windows standalone builds.
+- [x] macOS (arm64) and Windows (x64) standalone builds **produced** (`v0.1.0`).
+- [ ] Launched/played either standalone build (runtime untested).
 - [ ] Self-hosted GitHub Actions build (workflow added, never run).
 - [ ] URP visual quality / no missing shaders under scrutiny.
 
@@ -238,9 +255,9 @@ New automated tests:
 
 Actual results (all executed with the Editor closed):
 
-- `dotnet test` -> **73 passed, 0 failed** (run loop, upgrades, pickups, snapshots).
-- Unity EditMode -> **73 passed, 0 failed, 0 skipped**.
-- Unity PlayMode -> **11 passed, 0 failed, 0 skipped** (7 gameplay/solo + 2 connection gate + 1 combined replication test).
+- `dotnet test` -> **75 passed, 0 failed** (run loop, upgrades, pickups, snapshots).
+- Unity EditMode -> **75 passed, 0 failed, 0 skipped**.
+- Unity PlayMode -> **11 passed, 0 failed, 0 skipped** (7 arena/solo + 2 connection gate + 1 combined replication + 1 MPPM patch).
 
 ## Connection gate (Fusion Multi-Peer)
 
@@ -324,10 +341,10 @@ attack path is plumbed but not separately asserted.
 
 ## Build status
 
-No build was produced. The pinned editor `6000.0.84f1` has only
-**WindowsStandaloneSupport**; **Mac Build Support (IL2CPP) is missing**, so a
-macOS player cannot be built with it. `6000.6.4f1` has Mac support but would
-migrate the project. See `docs/HANDOFF.md`.
+macOS (arm64, unsigned) and Windows (x64) players were built locally with
+`6000.0.84f1` (which now has **MacStandaloneSupport** installed) and published as
+`v0.1.0`. The builds have **not been launched/played**, so runtime is unverified.
+See `docs/HANDOFF.md` ("Standalone validation").
 
 ## Known test gaps
 

@@ -42,6 +42,10 @@ stack counter because it directly bounds total damage and is simple to test.
 
 ## D6 - Photon Fusion 2 deferred; offline session shipped
 
+> **Superseded in Milestone 2:** Fusion 2.1.3 is now imported, an App ID is
+> configured locally, and online Host Mode is implemented (this record is kept for
+> history).
+
 Fusion is not present and no Photon App ID or credentials exist. Rather than add
 an unverifiable package reference or a fake networking framework, the project
 ships `INetworkSession` + `OfflineNetworkSession`, reports the exact blocker, and

@@ -106,10 +106,13 @@ join requires Fusion. A Fusion integration would submit commands into the same
 move combat into `Update` timers, and presentation must skip effects while
 `Runner.IsResimulating`. See `docs/DECISIONS.md`.
 
-## Milestone 2 plan: Photon Fusion 2 (Host Mode)
+## Milestone 2: Photon Fusion 2 (Host Mode)
 
-Status: **design only, not implemented.** Fusion is not installed and no App ID
-exists. Nothing in this section is claimed to work.
+Status: **implemented.** Fusion 2.1.3 is imported at `Assets/Photon/Fusion`, an
+App ID is configured locally (git-ignored), and host/join, ownership, and combat
+replication are implemented and covered by Multi-Peer PlayMode tests. See
+`docs/HANDOFF.md` for the verified checklist. The research and mapping notes below
+record the design that was followed.
 
 ### Version research (from Photon's official download page)
 

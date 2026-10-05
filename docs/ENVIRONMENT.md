@@ -3,7 +3,8 @@
 > Branding note: this game is **Duatborn**; historical titles "Rootbound: Fractured Realms" and "Dawnkeepers: Gates of Duat" are superseded. Internal identifiers, namespaces, assemblies, and `Assets/Rootbound` keep the old name (`docs/CREATIVE_DIRECTION.md`).
 
 Recorded so the team agrees on where Duatborn is built, tested, and shipped.
-This is policy, not a claim that any environment has run the Unity project.
+The project has been imported, compiled, tested, and built headlessly on the
+secondary Mac M1 environment (Unity `6000.0.84f1`); see `docs/HANDOFF.md`.
 
 ## Platforms
 
@@ -49,6 +50,8 @@ project is pinned to `6000.0.84f1`. Do not upgrade the editor silently.
 
 ## Networking
 
-Photon Fusion 2 is intended but is **not installed**, and no App ID is
-configured. WSL and the core test project do not change this. Do not commit
-`*.fusionappid`, `secrets/`, or `.env`.
+Photon Fusion 2.1.3 is imported at `Assets/Photon/Fusion`, and online Host Mode
+is implemented. A Photon App ID is required at runtime; it is held in the
+git-ignored `Assets/Photon/Fusion/Resources/PhotonAppSettings.asset` (and injected
+in CI from the `PHOTON_APP_ID` secret). WSL and the core test project are
+unaffected. Do not commit the App ID, `*.fusionappid`, `secrets/`, or `.env`.

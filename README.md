@@ -12,14 +12,18 @@ Gates of Duat". The repository, project folder, namespaces, and internal type
 names retain the "Rootbound" name; only player-facing branding uses Duatborn.
 See `docs/CREATIVE_DIRECTION.md`.
 
-This repository currently contains **Milestone 1**: one local combat arena where
-the Dune Warden and Sunwing fight Hollow Sentinels, with the Binding Seal
-consecration co-op interaction.
+This repository currently contains **Milestone 3**: a host-authoritative
+three-room run loop (Rootway → Blight Hollow → Heartwood finale) with between-room
+upgrade pickups, a second enemy type (the Sporeling), and both offline (solo /
+local co-op) and Photon Fusion online host/join play.
 
 > Status: the project **compiles in Unity `6000.0.84f1` (arm64)** and the arena
-> scene runs headlessly in Play Mode. Automated tests: **28 EditMode/core + 1
-> PlayMode, all passing**. Visual/GUI play, real gamepad input, and builds are
-> still unverified. Photon Fusion is **not installed**. See `docs/HANDOFF.md`.
+> scene runs headlessly in Play Mode. Automated tests: **core 75/75, Unity
+> EditMode 75/75, Unity PlayMode 11/11, all passing**. Photon Fusion 2.1.3 is
+> imported and online Host Mode is manually validated. `v0.1.0` macOS (arm64)
+> and Windows builds are published; the macOS player was smoke-tested headlessly.
+> Real gamepad input, full standalone gameplay, and two-machine play remain
+> unverified. See `docs/HANDOFF.md`.
 
 **Native Windows is the primary development environment and the initial release
 target; Mac M1 is secondary. WSL is optional tooling, not the Unity environment.**
@@ -60,11 +64,12 @@ The individual menu items (`Configure URP and Input`, `Build Milestone 1 Content
 
 1. Open `Assets/Rootbound/Scenes/CombatArena.unity`.
 2. Press **Play**.
-3. Click **Host Local Session (2 players)**.
+3. Pick a mode from the menu: **Play Solo**, **Host Co-op**, **Join Co-op**, or
+   **Local Co-op**. Offline modes report `Session: Hosting LOCAL (offline/local)`.
 
-The menu reports `Session: Hosting LOCAL (offline/local)`. Online join is
-intentionally unavailable until Fusion is integrated; install steps and App ID
-configuration are in `docs/FUSION_SETUP.md` (Fusion 2.1.3, Unity 6.0.x supported).
+Online host/join uses Photon Fusion 2.1.3 Host Mode (no prediction); a Photon App
+ID must be configured locally. Install steps and App ID configuration are in
+`docs/FUSION_SETUP.md` (Fusion 2.1.3, Unity 6.0.x supported).
 
 ## Controls
 
@@ -98,13 +103,21 @@ dotnet test Tools/CoreTests/CoreTests.csproj
 ```
 
 Inside Unity: `Window > General > Test Runner`, then run the **EditMode** and
-**PlayMode** suites. Last recorded results on this Mac:
+**PlayMode** suites. Last results on this Mac (Unity `6000.0.84f1`, headless):
 
-- `dotnet test`: 47/47 passed.
-- Unity EditMode: 47/47 passed.
-- Unity PlayMode integration: 3/3 passed.
+- `dotnet test`: 75/75 passed.
+- Unity EditMode: 75/75 passed.
+- Unity PlayMode: 11/11 passed.
 
 See `docs/TESTING.md` for exact commands and the manual checklist.
+
+## Builds and releases
+
+`v0.1.0` ships a Windows x64 build and an unsigned macOS Apple Silicon (arm64)
+build on the [Releases page](https://github.com/yHugoSoares/duatborn/releases). GitHub Actions builds both targets
+(see `docs/HANDOFF.md` CI section); tagged `v*` builds publish versioned archives
+when Unity license secrets are configured or a self-hosted macOS runner is
+registered.
 
 ## Repository layout
 
@@ -121,7 +134,7 @@ Assets/Rootbound/
 Packages/               Unity package manifest and lock
 ProjectSettings/        Pinned editor version
 Tools/CoreTests/        dotnet test project for the pure core
-docs/                   ARCHITECTURE, DECISIONS, TESTING, HANDOFF, PLAN
+docs/                   ARCHITECTURE, DECISIONS, TESTING, HANDOFF, PLAN, MILESTONE3_PLAN
 ```
 
 ## Non-goals for this milestone

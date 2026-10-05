@@ -11,13 +11,15 @@
 - The import added `com.unity.nuget.mono-cecil: 1.10.2` to
   `Packages/manifest.json` and added Fusion scripting defines + enabled unsafe
   code in `ProjectSettings/ProjectSettings.asset`. These are Fusion-required.
-- **The Fusion App ID is NOT set** (`AppIdFusion` is empty in
-  `Assets/Photon/Fusion/Resources/PhotonAppSettings.asset`). Until it is set,
-  host/join cannot connect and **no online behavior can be tested**.
-- `PhotonAppSettings.asset` is now git-ignored so the App ID is never committed.
+- **The Fusion App ID is set locally** in
+  `Assets/Photon/Fusion/Resources/PhotonAppSettings.asset` (git-ignored), and
+  host/join connects. The value is never committed. For CI, pass it via the
+  `PHOTON_APP_ID` secret (see `docs/HANDOFF.md`).
+- `PhotonAppSettings.asset` is git-ignored so the App ID is never committed.
 
-Previously Fusion was not installed; the sections below are the install steps and
-the integration plan. Nothing online is implemented or validated yet.
+Fusion Host Mode is **implemented and covered by Multi-Peer PlayMode tests**, and
+multiplayer was manually validated by the developer. The sections below remain the
+install steps and the integration design.
 
 ## Verified facts (official Photon docs/download page, 2026-10-02)
 
