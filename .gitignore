@@ -40,7 +40,7 @@ sysinfo.txt
 crashlytics-build.properties
 
 # Unity crash dumps
-mono_crash*.json
+mono_crash*
 
 # OS
 .DS_Store
@@ -56,3 +56,9 @@ Tools/**/TestResults/
 *.fusionappid
 secrets/
 .env
+
+# Fusion settings asset holds the App ID. Photon treats App IDs as client-side
+# (non-secret), but project policy keeps credentials out of version control, so
+# each developer populates this locally after import.
+Assets/Photon/Fusion/Resources/PhotonAppSettings.asset
+Assets/Photon/Fusion/Resources/PhotonAppSettings.asset.meta
