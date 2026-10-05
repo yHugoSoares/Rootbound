@@ -104,6 +104,79 @@ join requires Fusion. A Fusion integration would submit commands into the same
 move combat into `Update` timers, and presentation must skip effects while
 `Runner.IsResimulating`. See `docs/DECISIONS.md`.
 
+## Milestone 2 plan: Photon Fusion 2 (Host Mode)
+
+Status: **design only, not implemented.** Fusion is not installed and no App ID
+exists. Nothing in this section is claimed to work.
+
+### Version research (from Photon's official download page)
+
+- Fusion **2.0** line: latest stable **2.0.13, build 2379**.
+- Fusion **2.1** line: latest stable **2.1.3, build 2390**.
+- Distributed as a `.unitypackage` from `downloads.photonengine.com` (sign-in
+  required), not a UPM registry package; an App ID comes from the Photon
+  dashboard. Credentials must never be committed (`*.fusionappid`, `secrets/`,
+  `.env` are ignored).
+- Unity support (official requirements): **`2021.3.45`, `2022.3.45`, `6.0.x`,
+  `6.3.x`**. The pinned editor `6000.0.84f1` is Unity 6.0 LTS, so it is
+  officially supported.
+- Asset Serialization must be **Force Text**; this project already is.
+- Step-by-step install and App ID configuration: `docs/FUSION_SETUP.md`.
+
+### Mapping onto the existing architecture
+
+- The host runs one `CombatSimulation`; it stays engine-agnostic.
+- `FusionNetworkSession : INetworkSession` replaces `OfflineNetworkSession` when
+  online; `RootboundMenu` is unchanged.
+- A `NetworkBehaviour` (for example `FusionCombatRunner`) owns the simulation and
+  drives it from `FixedUpdateNetwork`, one `Step` per Fusion tick.
+- The local camera focuses the controlling player through
+  `IsometricCameraRig.SetLocalPlayer(id)`; offline keeps the centroid (`-1`).
+
+### Authority
+
+- Host authoritative for spawning, enemy AI, damage, cooldowns, cage ignition,
+  and encounter completion.
+- Clients never mutate `CombatSimulation`; they produce `PlayerCommand` only.
+- Validation stays in the simulation; the existing accepted/rejected reason is
+  the host's decision and can be surfaced on clients.
+
+### Client input
+
+- Each client reads its local `PlayerInputAdapter`. Continuous values
+  (`Move`, `Aim`) travel through Fusion input; discrete presses (`Dodge`) keep the
+  existing latch so a press is not lost between render frames and ticks.
+- The adapter already carries an optional world `TargetPoint`; it is sent with the
+  command so the host places aimed abilities at the intended location.
+
+### Replicated state
+
+- Players: position, facing, health/defeated, cooldown `Remaining`/`Duration`,
+  ability phase, dodge state.
+- Enemies: position, facing, health/defeated, attack cooldown.
+- Cages: position, radius, remaining duration, ignited/burn.
+- Projectiles: id, position, lifetime.
+- Spawn configuration is replicated once. Decorative effects are derived locally
+  from replicated state and never sent.
+
+### Prediction and resimulation (limitations)
+
+- Host authority with Fusion `[Networked]` state; the owning client may predict
+  its own creature's movement/dodge for feel.
+- Prediction is limited to local movement/dodge. Damage, defeat, and cage
+  ignition stay host-confirmed to prevent duplicated resolution.
+- Do not assume cross-machine floating-point determinism. The simulation is
+  plain kinematic math, but correctness comes from host state replication, not
+  from identical client results.
+- Presentation must skip effects while `Runner.IsResimulating` so particles and
+  audio do not replay during correction.
+- No host migration (explicitly out of scope for this milestone).
+
+### Explicitly not doing
+
+- No second networking framework, no custom transport, no fake/stub networking
+  layer, and no per-frame RPC of all state.
+
 ## Presentation
 
 - `IsometricCameraRig`: fixed 35 deg pitch / 45 deg yaw, orthographic, follows the

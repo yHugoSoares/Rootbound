@@ -7,15 +7,110 @@ Platform policy is in `docs/ENVIRONMENT.md`.
 
 ## Current status
 
-- Unity compile: **succeeded** (`-batchmode`, EXIT=0, no `error CS`).
-- Unity EditMode tests: **47/47 passed**.
-- Unity PlayMode integration tests: **3/3 passed**.
-- Pure core tests: **47/47 passed**.
-- Arena scene: **generated** (`Assets/Rootbound/Scenes/CombatArena.unity`) and it
-  runs in Play Mode headlessly.
+- Unity compile: **succeeded**, including with Photon Fusion imported (Editor log
+  `Tundra build success`, no `error CS`).
+- Latest full run (with Fusion imported, Editor closed): core **52/52**, Unity
+  EditMode **52/52**, Unity PlayMode **9/9** (7 gameplay/solo + 2 connection
+  gate, Fusion Multi-Peer over Photon Cloud Host Mode).
+- Arena scene: `Assets/Rootbound/Scenes/CombatArena.unity`; runs in Play Mode
+  headlessly.
 - Local GUI play (keyboard/mouse, single instance): **manually validated** (see
   "Manual validation"). Gamepad, two-player, standalone builds, and online play:
   **not validated**.
+- Photon Fusion 2.1.3: **imported** (`Assets/Photon/Fusion`). **App ID is not
+  set** (`AppIdFusion` empty), so host/join cannot connect. Exact steps are in
+  `docs/FUSION_SETUP.md`.
+
+## Milestone 2 dependency verification (Fusion import)
+
+- **SDK version:** loaded assemblies report `Fusion.Runtime 2.1.3.0` (imported via
+  `.unitypackage` at `Assets/Photon/Fusion`). The SDK's `package.json` says
+  "1.1.0" (wrapper version); trust the assembly version.
+- **Compilation:** the project compiles with Fusion. Import added
+  `com.unity.nuget.mono-cecil: 1.10.2` to `Packages/manifest.json` and Fusion
+  scripting defines plus `allowUnsafeCode: 1` to `ProjectSettings.asset`; these are
+  required and were kept.
+- **Transient import warnings:** `Fusion.CodeGen.ILWeaverBindings: Failed to
+  locate a valid config` appeared during the import only; the latest build
+  succeeds and the warning no longer appears. Not fixed (import ordering), no
+  action taken.
+- **Console error `ScriptableSingleton already exists. Did you query the singleton
+  in a constructor?`:** full stack trace is entirely inside Unity's own Package
+  Manager UI:
+  `UnityEditor.ScriptableSingleton<T>:.ctor` ->
+  `UnityEditor.PackageManager.UI.Internal.ServicesContainer:.ctor` and
+  `...PackageManagerProjectSettings:.ctor`. It recurs once per domain reload, is
+  **not caused by Rootbound or Fusion**, is benign, and has no project-side fix.
+  No assets were deleted.
+- **Repository handling:** `Assets/Photon` is untracked (imported after the last
+  commit). `PhotonAppSettings.asset` is now git-ignored (with its `.meta`) so a
+  populated App ID is never committed; each developer sets it locally. The
+  Fusion-required `manifest.json` and `ProjectSettings.asset` changes are kept.
+- **Blocker:** the App ID is empty, so no online test is possible yet.
+
+## Solo mode and menu (Milestone 2 addition)
+
+- Menu now separates **Play Solo** (with Root Guardian / Ember Moth selection),
+  **Host Co-op**, **Join Co-op**, and **Local Co-op (2 players)**. A two-player
+  arena is never labelled singleplayer.
+- **Solo uses the existing offline runner** (`LocalGameRunner` +
+  `OfflineNetworkSession`) with one player spec. No `NetworkRunner`, no Photon
+  Cloud connection, and no App ID are required for Play Solo.
+- Architecture decision: did **not** use Fusion `GameMode.Single`. It would add a
+  Fusion runner/weave lifecycle without reducing duplication, since the offline
+  runner already exists and the shared `CombatSimulation` rules are reused
+  unchanged. Both solo and co-op call the same Core combat code.
+- `LocalGameRunner` gained `selectedCreature` (solo), single-player camera focus
+  (`SetLocalPlayer(0)`), and a `pauseAllowed`/`IsPaused` pause that only applies
+  to offline modes — an online host's simulation is never paused.
+- Register only if genuinely verified: no Unity suite was re-run this session
+  (Editor open); `dotnet` is 52/52.
+
+## Milestone 2 increment 1: ownership + movement (implemented, automated)
+
+- `FusionCombatHost` (`NetworkBehaviour`): host owns the single `CombatSimulation`,
+  maps `PlayerRef -> index` by join order, reads each client's `RootboundInput`,
+  steps, and replicates player position/facing via `[Networked]` vectors; clients
+  apply to a mirror and focus their camera on their own player.
+- Match prefab `Assets/Rootbound/Prefabs/FusionMatch.prefab` (`NetworkObject` +
+  `FusionCombatHost`), labeled `FusionPrefab` so Fusion registers it (editor menu
+  `Rootbound > Build Fusion Match Prefab`).
+- `FusionNetworkSession` spawns the match on the host and provides local input.
+- Menu: online modes no longer run `LocalGameRunner`; the Fusion host binds
+  presentation.
+- MPPM **1.6.3** added to `Packages/manifest.json` (latest for Unity 6000.0) for
+  a real second-Editor peer.
+- Increment 2 adds player health and enemy position/health/defeated replication
+  (`[Networked]` arrays applied on clients in `Render`).
+- Increment 3 covers primary attacks: the host resolves ability damage once and
+  replicates the result.
+- Increment 4 covers the Root Cage and Ember Moth ignition replication.
+- Online polish: a **lobby with no enemies** that the host starts with **R**
+  (replicated `EncounterStarted`), and **online dodge input** (latched in
+  `FusionNetworkSession.Update`, since online never runs `LocalGameRunner`).
+- MPPM unblocked by a narrow Fusion `FusionInstaller` patch (see
+  `docs/patches/fusion-installer-mppm.patch`).
+- Verified by `FusionMovementReplicationTests.AllCombatStateReplicatesToClient`
+  over Photon Cloud Host Mode (Multi-Peer) in one connection. **No prediction.**
+  Disconnect handling is in `FusionNetworkSession`/menu (not GUI-asserted). Not
+  manually tested on two machines.
+
+## Milestone 2 integration issues found and fixed
+
+- **`NetworkRunner should not be reused`** on `StartGame`: the IMGUI `OnGUI`
+  multi-pass invoked the `Host` button handler more than once per click, and the
+  session reused a runner. Fixed by moving session actions to `Update`
+  (single call via a request flag), adding a `_busy`/`CanStart` guard, and
+  disposing the runner on `Leave`/failure (`FusionNetworkSession.EnsureRunner`).
+- **`RootboundInput has no attribute Fusion.NetworkInputWeavedAttribute`**:
+  Fusion's IL weaver only processes assemblies listed in
+  `Assets/Photon/Fusion/Resources/NetworkProjectConfig.fusion` ->
+  `AssembliesToWeave` (defaults to `Assembly-CSharp`, `Assembly-CSharp-firstpass`).
+  Added **`Rootbound.Fusion`**. Verified the rebuilt
+  `Library/ScriptAssemblies/Rootbound.Fusion.dll` now contains
+  `NetworkInputWeavedAttribute`/`NetworkAssemblyWeavedAttribute`.
+- The new `Rootbound.Fusion` assembly compiles (no `error CS`); the offline arena
+  assemblies remain Fusion-free via `NetworkSessionFactory`.
 
 ## Exact engine and packages (resolved on this machine)
 
@@ -160,10 +255,12 @@ exception soak, frame-rate sweep, standalone builds, and online play.
 
 | Suite | Command | Result |
 | --- | --- | --- |
-| Pure core | `dotnet test Tools/CoreTests/CoreTests.csproj` | 47 passed, 0 failed |
+| Pure core | `dotnet test Tools/CoreTests/CoreTests.csproj` | 54 passed, 0 failed |
 | Unity import/compile | `-batchmode -nographics -quit` | EXIT=0, no compiler errors |
-| Unity EditMode | `-runTests -testPlatform EditMode` | 47 passed, 0 failed |
-| Unity PlayMode | `-runTests -testPlatform PlayMode` | 3 passed, 0 failed |
+| Unity EditMode | `-runTests -testPlatform EditMode` | 54 passed, 0 failed |
+| Unity PlayMode | `-runTests -testPlatform PlayMode` | 10 passed, 0 failed |
+| Connection gate | `FusionConnectionGateTests` (Photon Cloud, Host Mode, Multi-Peer) | 1 host + 1 client; gates 1-8 pass |
+| Combat replication | `FusionMovementReplicationTests` | movement, attack damage, player/enemy health, cage and ignition reach the client mirror |
 
 The PlayMode tests load the generated scene and assert scene wiring, creature
 spawning from ScriptableObjects, simulation stepping, Blightling movement/damage,
@@ -226,6 +323,9 @@ validation remains pending.
 2. **No gamepad connected** in this environment, so player 2 input and
    two-player local play are untested.
 3. **Photon Fusion 2 not installed, no App ID.** Online play is not implemented.
+   Install Fusion 2.1.3 (Build 2390) and configure an App ID per
+   `docs/FUSION_SETUP.md`; Unity 6.0.x is officially supported. `Assets/Photon`
+   must not be added to version control with a populated App ID.
 4. Local prototype checkpoint committed; generated assets, `.meta`, and
    `ProjectSettings` are now tracked.
 

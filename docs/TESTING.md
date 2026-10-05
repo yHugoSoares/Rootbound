@@ -204,6 +204,113 @@ Not validated - do not describe these as working:
 - [ ] Online multiplayer (Photon Fusion is not installed).
 - [ ] URP visual quality / no missing shaders under scrutiny.
 
+## Solo mode (Milestone 2 addition)
+
+Genuine offline singleplayer uses the existing offline runner
+(`LocalGameRunner` + `OfflineNetworkSession`) with **one** player spec — no Fusion
+runner, no Photon connection, no App ID required. Same `Rootbound.Core` combat
+rules as co-op; no separate rule set. Player-hosted co-op (Fusion Host Mode) is
+unchanged and extended, not replaced.
+
+Architecture decision: reuse the existing offline runner rather than Fusion
+`GameMode.Single`. `GameMode.Single` would still spin up a `NetworkRunner` and
+require weaving/config for no lifecycle saving, whereas the offline runner
+already exists and needs no connection. Both paths share `CombatSimulation`.
+
+New automated tests:
+
+- Core (also runs via `dotnet`): `SoloModeTests` — exactly one player, selected
+  creature, encounter completion with one player, defeat + restart, solo primary
+  damage.
+- Unity PlayMode: `SoloRunnerSpawnsOneSelectedCreatureAndCycles`,
+  `SoloPauseStopsLocalSimulation`, `OnlineHostModeIgnoresPause`.
+
+Actual results (all executed with the Editor closed):
+
+- `dotnet test` -> **54 passed, 0 failed** (adds `PlayerSnapshotTests`).
+- Unity EditMode -> **54 passed, 0 failed, 0 skipped**.
+- Unity PlayMode -> **10 passed, 0 failed, 0 skipped** (7 gameplay/solo + 2 connection gate + 1 combined replication test).
+
+## Connection gate (Fusion Multi-Peer)
+
+Method: **Fusion Multi-Peer** — a host and a client `NetworkRunner` in one
+process, over the real **Photon Cloud, GameMode.Host** transport (no macOS build,
+no MPPM). Chosen over MPPM because the session layer is a thin `NetworkRunner`
+wrapper and Multi-Peer is headless and automatable. Tests:
+`FusionConnectionGateTests`.
+
+Observed in a passing run (Automated, `/tmp/rb11-play.xml`):
+
+| Gate | Evidence | Result |
+| --- | --- | --- |
+| 1. Host creates explicit session code | `host.SessionCode` non-empty after connect | pass |
+| 2. Second peer joins that code | client reaches `Connected` via `Join(code)` | pass |
+| 3. Host sees second connection | `host.PlayerCount >= 2` | pass |
+| 4. Client leaves cleanly | client `Leave()`; host `PlayerCount <= 1` | pass |
+| 5. Host ends cleanly | host `Leave()` -> `Offline` | pass |
+| 6. Fresh host/join after shutdown | new host/client connect after full shutdown + settle delay | pass |
+| 7. Failed join returns cleanly | `Join("RB-ZZZZ")` -> `Error` (`GameNotFound`, ErrorCode 32758) | pass |
+| 8. Solo available after failures/exits | `OfflineNetworkSession.StartHost()` -> `Hosting` | pass |
+
+The failed join logs `[Fusion] StartGame Failed ... GameNotFound`; the test
+expects that error log. This is not a substitute for two-machine testing.
+
+## Increment 1: ownership + movement replication
+
+Host-authoritative: the host owns the single `CombatSimulation` and steps it in
+`FixedUpdateNetwork`; it maps `PlayerRef -> player index` by join order and reads
+each client's `RootboundInput`. Movement/facing are replicated as `[Networked]`
+vectors; clients apply them to a local mirror and focus their camera on their own
+player. No prediction. Match object: `Assets/Rootbound/Prefabs/FusionMatch.prefab`
+(`NetworkObject` + `FusionCombatHost`, labeled `FusionPrefab`).
+
+Test `FusionMovementReplicationTests.AllCombatStateReplicatesToClient` (**pass**,
+`/tmp/rb28-play.xml`) uses a **single** host/client connection and checks, in
+order: host movement reaches the client proxy; a host primary attack damages an
+adjacent enemy once and the health replicates; player health replicates; a host
+Root Cage replicates (position); the Ember Moth ignition replicates
+(`IsIgnited`). One connection avoids repeated Multi-Peer shutdown/reconnect
+flakiness.
+
+Online lobby/controls:
+- The match starts as a **lobby with only the connected players** (no enemies);
+  the **host presses R** to start (and to restart after clear/defeat). Any player
+  can also request a restart; the host executes it.
+- **Dynamic roster**: the lobby shows one creature until Player 2 joins, then a
+  second slot is added using **that player's own selected creature** (not a fixed
+  second creature). Creature selection is sent in `RootboundInput.Creature`.
+- The `EncounterStarted` flag, player count, creatures and enemy count replicate,
+  so peers rebuild their mirror on each transition.
+- The result overlay ("Press R to run it back") is shown per local player: a
+  defeated player does not see it when a teammate cleared the encounter.
+- Online **dodge** is captured in `FusionNetworkSession.Update` via
+  `PlayerInputAdapter.CaptureFrame` (previously only `LocalGameRunner` did this,
+  so online dodges were never latched).
+- The combined replication test asserts the lobby has zero enemies, that
+  `StartEncounter()` replicates, and that ignition replicates with Player 2 as
+  Ember Moth.
+
+Player/enemy/cage state uses `[Networked] NetworkArray<...>`; clients apply it in
+`Render` (the proxy's `FixedUpdateNetwork` is not reliably invoked in Multi-Peer).
+
+Disconnect handling lives in `FusionNetworkSession` (`OnPlayerLeft`,
+`OnDisconnectedFromServer`) and the menu returns to the menu; combat object
+despawn is Fusion-managed. Not separately asserted in a GUI. A client-originated
+attack path is plumbed but not separately asserted.
+
+### Solo manual checklist (run with internet disconnected)
+
+- [ ] Menu shows **Play Solo**, **Host Co-op**, **Join Co-op**, and **Local Co-op** separately.
+- [ ] Select Root Guardian, then Play Solo: exactly one creature spawns, no idle second player.
+- [ ] Repeat selecting Ember Moth; the solo creature is Ember Moth.
+- [ ] Movement, primary, Q targeting/clamping, dodge, cooldowns, defeat, `R` restart all work solo.
+- [ ] Camera and HUD show only the solo player.
+- [ ] Clearing all Blightlings completes the encounter with no teammate present.
+- [ ] The cage + Ember ignition is not required to clear.
+- [ ] `Esc` pauses the solo simulation; `Esc` resumes; HUD shows PAUSED.
+- [ ] Disconnect Wi-Fi and confirm Play Solo still starts.
+- [ ] Mode transitions: Solo -> menu -> Solo; Solo -> menu -> Host; failed Join -> menu -> Solo; online disconnect -> menu -> Solo.
+
 ## Build status
 
 No build was produced. The pinned editor `6000.0.84f1` has only

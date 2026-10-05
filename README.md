@@ -55,7 +55,8 @@ The individual menu items (`Configure URP and Input`, `Build Milestone 1 Content
 3. Click **Host Local Session (2 players)**.
 
 The menu reports `Session: Hosting LOCAL (offline/local)`. Online join is
-intentionally unavailable until Fusion is integrated.
+intentionally unavailable until Fusion is integrated; install steps and App ID
+configuration are in `docs/FUSION_SETUP.md` (Fusion 2.1.3, Unity 6.0.x supported).
 
 ## Controls
 
