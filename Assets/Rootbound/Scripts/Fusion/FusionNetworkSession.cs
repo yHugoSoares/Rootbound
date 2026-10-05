@@ -272,6 +272,7 @@ namespace Rootbound.Fusion
             value.Primary = cmd.Primary;
             value.Special = cmd.Special;
             value.Dodge = cmd.Dodge;
+            value.Interact = cmd.Interact;
             value.Creature = (byte)LocalCreature;
             value.Restart = UnityEngine.InputSystem.Keyboard.current != null
                 && UnityEngine.InputSystem.Keyboard.current.rKey.wasPressedThisFrame;

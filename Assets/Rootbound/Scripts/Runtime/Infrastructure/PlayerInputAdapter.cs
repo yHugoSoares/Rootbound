@@ -44,6 +44,7 @@ namespace Rootbound.Unity
             command.Primary = _actions.Primary.IsPressed();
             command.Special = _actions.Special.IsPressed();
             command.Dodge = _dodgeQueued;
+            command.Interact = _actions.Interact.IsPressed();
             _dodgeQueued = false;
             return command;
         }

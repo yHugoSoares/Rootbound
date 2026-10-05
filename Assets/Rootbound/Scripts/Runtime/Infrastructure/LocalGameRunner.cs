@@ -28,6 +28,11 @@ namespace Rootbound.Unity
         private readonly List<PlayerInputAdapter> _adapters = new List<PlayerInputAdapter>();
         private const int MaxStepsPerFrame = 5;
         private float _accumulator;
+        private ArenaSpec[] _rooms;
+        private RunState _run;
+        private CreatureSpec[] _playerSpecs;
+        private bool _upgradePending;
+        private readonly UpgradeField _upgradeField = new UpgradeField();
 
         private void Awake()
         {
@@ -50,18 +55,115 @@ namespace Rootbound.Unity
                 _adapters.Add(new PlayerInputAdapter(actions, arenaCamera));
             }
 
-            Simulation = new CombatSimulation(BuildSetup());
-            if (view != null) view.Bind(Simulation);
-            if (hud != null) hud.Bind(Simulation);
-            if (cameraRig != null)
-            {
-                cameraRig.Bind(Simulation);
-                cameraRig.SetLocalPlayer(playerCount <= 1 ? 0 : -1);
-            }
-            _accumulator = 0f;
+            _rooms = DefaultContent.DefaultRun();
+            _run = new RunState();
+            _run.Reset(_rooms.Length);
+
+            BuildRoom();
+            if (view != null) view.LocalPlayerId = playerCount <= 1 ? 0 : -1;
+            if (cameraRig != null) cameraRig.SetLocalPlayer(playerCount <= 1 ? 0 : -1);
             IsPaused = false;
             IsRunning = true;
         }
+
+        private ArenaSpec CurrentRoom()
+        {
+            int index = _run == null ? 0 : _run.RoomIndex;
+            if (_rooms == null || _rooms.Length == 0) return null;
+            if (index < 0) index = 0;
+            if (index >= _rooms.Length) index = _rooms.Length - 1;
+            return _rooms[index];
+        }
+
+        private CreatureKind[] PlayerKinds()
+        {
+            if (playerCount <= 1) return new[] { selectedCreature };
+            CreatureKind second = selectedCreature == CreatureKind.RootGuardian ? CreatureKind.EmberMoth : CreatureKind.RootGuardian;
+            return new[] { selectedCreature, second };
+        }
+
+        private void EnsurePlayerSpecs()
+        {
+            CreatureKind[] kinds = PlayerKinds();
+            if (_playerSpecs != null && _playerSpecs.Length == kinds.Length) return;
+            _playerSpecs = new CreatureSpec[kinds.Length];
+            for (int i = 0; i < kinds.Length; i++)
+                _playerSpecs[i] = kinds[i] == CreatureKind.EmberMoth ? DefaultContent.EmberMoth() : DefaultContent.RootGuardian();
+        }
+
+        private void ApplyUpgradeTo(int playerIndex, int upgradeIndex)
+        {
+            UpgradeSpec[] catalog = DefaultContent.UpgradeCatalog();
+            if (upgradeIndex < 0 || upgradeIndex >= catalog.Length) return;
+            EnsurePlayerSpecs();
+            if (playerIndex < 0 || playerIndex >= _playerSpecs.Length) return;
+            UpgradeRules.Apply(catalog[upgradeIndex], _playerSpecs[playerIndex]);
+        }
+
+        private void SpawnUpgrades()
+        {
+            UpgradeSpec[] catalog = DefaultContent.UpgradeCatalog();
+            int[] indices = new int[catalog.Length];
+            for (int i = 0; i < indices.Length; i++) indices[i] = i;
+            _upgradeField.Spawn(DefaultContent.UpgradePositions(), indices);
+            _upgradePending = true;
+            if (view != null) view.SetPickups(_upgradeField.Pickups);
+        }
+
+        private bool TryCollectPickup(out int collector, out int upgradeIndex)
+        {
+            collector = -1;
+            upgradeIndex = -1;
+            for (int i = 0; i < _actions.Count; i++)
+            {
+                if (_actions[i] == null || !_actions[i].Interact.IsPressed()) continue;
+                PlayerState p = Simulation.GetPlayer(i);
+                if (p == null || p.IsDefeated) continue;
+                int index;
+                int id;
+                if (!_upgradeField.TryCollectAt(p.Position, 2.0f, out index, out id)) continue;
+                collector = i;
+                upgradeIndex = index;
+                return true;
+            }
+            return false;
+        }
+
+        private void BuildRoom()
+        {
+            EnsurePlayerSpecs();
+            _upgradeField.Clear();
+            if (view != null) view.SetPickups(_upgradeField.Pickups);
+            ArenaSpec room = CurrentRoom();
+            CombatSetup setup = CombatSetup.FromArena(_playerSpecs, room, true);
+            setup.ArenaRadius = arenaRadius;
+            if (enemyDefinition != null) setup.EnemySpec = enemyDefinition.spec;
+            Simulation = new CombatSimulation(setup);
+            if (view != null) view.Bind(Simulation);
+            if (hud != null)
+            {
+                hud.Bind(Simulation);
+                hud.RoomIndex = _run.RoomIndex;
+                hud.RoomCount = _run.RoomCount;
+                hud.RoomName = room != null ? room.DisplayName : string.Empty;
+                hud.RunComplete = _run.RunComplete;
+                hud.RunFailed = _run.RunFailed;
+                hud.UpgradePending = _upgradePending;
+                hud.UpgradeOptions = UpgradeOptionLabels();
+            }
+            if (cameraRig != null) cameraRig.Bind(Simulation);
+            _accumulator = 0f;
+        }
+
+        private string[] UpgradeOptionLabels()
+        {
+            UpgradeSpec[] catalog = DefaultContent.UpgradeCatalog();
+            string[] labels = new string[catalog.Length];
+            for (int i = 0; i < catalog.Length; i++) labels[i] = catalog[i].DisplayName;
+            return labels;
+        }
+
+
 
         public void SetPaused(bool paused)
         {
@@ -71,12 +173,12 @@ namespace Rootbound.Unity
 
         public void Restart()
         {
-            if (Simulation == null) return;
-            Simulation.Reset();
-            if (view != null) view.Bind(Simulation);
-            if (hud != null) hud.Bind(Simulation);
-            if (cameraRig != null) cameraRig.Bind(Simulation);
-            _accumulator = 0f;
+            if (_run == null) return;
+            _run.Reset(_rooms.Length);
+            _playerSpecs = null;
+            _upgradePending = false;
+            BuildRoom();
+            IsPaused = false;
         }
 
         public void EndSession()
@@ -86,36 +188,9 @@ namespace Rootbound.Unity
             _adapters.Clear();
             IsRunning = false;
             IsPaused = false;
+            _playerSpecs = null;
+            _upgradePending = false;
             Simulation = null;
-        }
-
-        private CreatureSpec SoloSpec()
-        {
-            if (selectedCreature == CreatureKind.EmberMoth)
-                return player1Definition != null ? player1Definition.spec : DefaultContent.EmberMoth();
-            return player0Definition != null ? player0Definition.spec : DefaultContent.RootGuardian();
-        }
-
-        private CombatSetup BuildSetup()
-        {
-            int count = Mathf.Max(1, playerCount);
-            CreatureSpec[] specs = new CreatureSpec[count];
-            if (count == 1)
-            {
-                specs[0] = SoloSpec();
-            }
-            else
-            {
-                specs[0] = player0Definition != null ? player0Definition.spec : DefaultContent.RootGuardian();
-                specs[1] = player1Definition != null ? player1Definition.spec : DefaultContent.EmberMoth();
-            }
-
-            CombatSetup setup = new CombatSetup();
-            setup.PlayerSpecs = specs;
-            setup.EnemySpec = enemyDefinition != null ? enemyDefinition.spec : DefaultContent.Blightling();
-            setup.EnemyCount = enemyCount;
-            setup.ArenaRadius = arenaRadius;
-            return setup;
         }
 
         private void Update()
@@ -153,11 +228,52 @@ namespace Rootbound.Unity
                 steps++;
             }
 
-            if (view != null) view.Render(Simulation, Time.deltaTime);
+            if (view != null)
+            {
+                view.SetPickups(_upgradeField.Pickups);
+                view.Render(Simulation, Time.deltaTime);
+            }
 
-            bool finished = Simulation.EncounterCleared || Simulation.AllPlayersDefeated;
-            if (finished && Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame)
-                Restart();
+            if (_run != null)
+            {
+                if (_upgradePending)
+                {
+                    int collector;
+                    int upgradeIndex;
+                    if (TryCollectPickup(out collector, out upgradeIndex))
+                    {
+                        ApplyUpgradeTo(collector, upgradeIndex);
+                        _upgradePending = false;
+                        _run.Update(true, false);
+                        BuildRoom();
+                    }
+                }
+                else if (Simulation.AllPlayersDefeated)
+                {
+                    _run.Update(false, true);
+                }
+                else if (Simulation.EncounterCleared)
+                {
+                    if (_run.IsFinalRoom) _run.Update(true, false);
+                    else SpawnUpgrades();
+                }
+
+                if (hud != null)
+                {
+                    hud.RoomIndex = _run.RoomIndex;
+                    hud.RoomCount = _run.RoomCount;
+                    ArenaSpec room = CurrentRoom();
+                    hud.RoomName = room != null ? room.DisplayName : string.Empty;
+                    hud.RunComplete = _run.RunComplete;
+                    hud.RunFailed = _run.RunFailed;
+                    hud.UpgradePending = _upgradePending;
+                    hud.UpgradeOptions = UpgradeOptionLabels();
+                }
+
+                bool finished = _run.RunComplete || _run.RunFailed;
+                if (finished && Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame)
+                    Restart();
+            }
         }
 
         private void OnDestroy()

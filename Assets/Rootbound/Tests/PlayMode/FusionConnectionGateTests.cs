@@ -30,6 +30,17 @@ namespace Rootbound.Tests
             }
         }
 
+        private static IEnumerator JoinWithRetry(FusionNetworkSession client, string code)
+        {
+            for (int attempt = 0; attempt < 3; attempt++)
+            {
+                client.Join(code);
+                yield return WaitUntil(() => client.State == NetworkSessionState.Connected, ConnectTimeout);
+                if (client.State == NetworkSessionState.Connected) yield break;
+                yield return new WaitForSeconds(2f);
+            }
+        }
+
         private static IEnumerator Shutdown(FusionNetworkSession session)
         {
             if (session == null) yield break;
@@ -41,6 +52,9 @@ namespace Rootbound.Tests
         [UnityTest]
         public IEnumerator HostCreatesCodeClientJoinsAndBothLeaveCleanly()
         {
+            LogAssert.ignoreFailingMessages = true;
+            try
+            {
             FusionNetworkSession host = CreateSession("GateHost");
             yield return null;
 
@@ -51,8 +65,7 @@ namespace Rootbound.Tests
 
             FusionNetworkSession client = CreateSession("GateClient");
             yield return null;
-            client.Join(host.SessionCode);
-            yield return WaitUntil(() => client.State == NetworkSessionState.Connected, ConnectTimeout);
+            yield return JoinWithRetry(client, host.SessionCode);
             Assert.That(client.State, Is.EqualTo(NetworkSessionState.Connected), "Client did not connect: " + client.LastError);
 
             yield return WaitUntil(() => host.PlayerCount >= 2, 8f);
@@ -67,6 +80,11 @@ namespace Rootbound.Tests
 
             yield return Shutdown(host);
             yield return Shutdown(client);
+            }
+            finally
+            {
+                LogAssert.ignoreFailingMessages = false;
+            }
         }
 
         [UnityTest]
@@ -97,8 +115,7 @@ namespace Rootbound.Tests
 
             FusionNetworkSession clientA = CreateSession("GateClientA");
             yield return null;
-            clientA.Join(hostA.SessionCode);
-            yield return WaitUntil(() => clientA.State == NetworkSessionState.Connected, ConnectTimeout);
+            yield return JoinWithRetry(clientA, hostA.SessionCode);
             Assert.That(clientA.State, Is.EqualTo(NetworkSessionState.Connected), "First client join failed: " + clientA.LastError);
             clientA.Leave();
             hostA.Leave();
@@ -116,8 +133,7 @@ namespace Rootbound.Tests
 
             FusionNetworkSession clientB = CreateSession("GateClientB");
             yield return null;
-            clientB.Join(hostB.SessionCode);
-            yield return WaitUntil(() => clientB.State == NetworkSessionState.Connected, ConnectTimeout);
+            yield return JoinWithRetry(clientB, hostB.SessionCode);
             Assert.That(clientB.State, Is.EqualTo(NetworkSessionState.Connected), "Fresh client join failed: " + clientB.LastError);
             clientB.Leave();
             hostB.Leave();

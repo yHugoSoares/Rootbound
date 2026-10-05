@@ -10,6 +10,7 @@ namespace Rootbound.Unity
         public readonly InputAction Primary;
         public readonly InputAction Special;
         public readonly InputAction Dodge;
+        public readonly InputAction Interact;
 
         private readonly InputActionMap _map;
 
@@ -23,6 +24,7 @@ namespace Rootbound.Unity
             Primary = _map.AddAction("Primary", InputActionType.Button);
             Special = _map.AddAction("Special", InputActionType.Button);
             Dodge = _map.AddAction("Dodge", InputActionType.Button);
+            Interact = _map.AddAction("Interact", InputActionType.Button);
 
             if (playerIndex == 0) ConfigureKeyboardMouse();
             else ConfigureGamepad();
@@ -46,6 +48,8 @@ namespace Rootbound.Unity
             Special.AddBinding("<Gamepad>/buttonWest");
             Dodge.AddBinding("<Keyboard>/space");
             Dodge.AddBinding("<Gamepad>/buttonEast");
+            Interact.AddBinding("<Keyboard>/e");
+            Interact.AddBinding("<Gamepad>/buttonNorth");
         }
 
         private void ConfigureGamepad()
@@ -56,6 +60,7 @@ namespace Rootbound.Unity
             Primary.AddBinding("<Gamepad>/rightTrigger");
             Special.AddBinding("<Gamepad>/leftTrigger");
             Dodge.AddBinding("<Gamepad>/buttonEast");
+            Interact.AddBinding("<Gamepad>/buttonNorth");
         }
 
         public void Enable()

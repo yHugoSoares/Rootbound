@@ -12,6 +12,7 @@ namespace Rootbound.Fusion
         public NetworkBool Primary;
         public NetworkBool Special;
         public NetworkBool Dodge;
+        public NetworkBool Interact;
         public NetworkBool Restart;
         public byte Creature;
     }

@@ -18,6 +18,18 @@ namespace Rootbound.Unity
 
         private readonly Dictionary<int, Transform> _aimMarkers = new Dictionary<int, Transform>();
         private readonly Dictionary<int, Renderer> _aimMarkerRenderers = new Dictionary<int, Renderer>();
+        private readonly Dictionary<int, Transform> _pickupViews = new Dictionary<int, Transform>();
+        private readonly Dictionary<int, Renderer> _pickupRenderers = new Dictionary<int, Renderer>();
+        private readonly Dictionary<int, TextMesh> _pickupLabels = new Dictionary<int, TextMesh>();
+        private IReadOnlyList<UpgradePickupState> _pickups;
+
+        public int LocalPlayerId = -1;
+        public float PickupLabelRange = 3f;
+
+        public void SetPickups(IReadOnlyList<UpgradePickupState> pickups)
+        {
+            _pickups = pickups;
+        }
         private readonly Dictionary<int, Transform> _players = new Dictionary<int, Transform>();
         private readonly Dictionary<int, Transform> _enemies = new Dictionary<int, Transform>();
         private readonly Dictionary<int, Transform> _cages = new Dictionary<int, Transform>();
@@ -80,6 +92,102 @@ namespace Rootbound.Unity
             RenderAimMarkers(sim);
             SyncCages(sim);
             SyncProjectiles(sim);
+            SyncPickups(sim);
+        }
+
+        private void SyncPickups(CombatSimulation sim)
+        {
+            if (_pickups == null) return;
+
+            _seen.Clear();
+            for (int i = 0; i < _pickups.Count; i++)
+            {
+                UpgradePickupState p = _pickups[i];
+                _seen.Add(p.Id);
+
+                Transform t;
+                if (!_pickupViews.TryGetValue(p.Id, out t))
+                {
+                    GameObject go = PlaceholderVisuals.CreateCylinder("Pickup_" + p.Id, PickupColor(p.UpgradeIndex));
+                    go.transform.SetParent(transform, false);
+                    t = go.transform;
+                    _pickupViews[p.Id] = t;
+                    _pickupRenderers[p.Id] = go.GetComponent<Renderer>();
+
+                    GameObject labelGo = new GameObject("Label");
+                    labelGo.transform.SetParent(t, false);
+                    labelGo.transform.localPosition = new Vector3(0f, 0.75f, 0f);
+                    labelGo.transform.localRotation = Quaternion.Euler(60f, 0f, 0f);
+                    TextMesh textMesh = labelGo.AddComponent<TextMesh>();
+                    textMesh.text = PickupDescription(p.UpgradeIndex);
+                    textMesh.characterSize = 0.12f;
+                    textMesh.fontSize = 64;
+                    textMesh.anchor = TextAnchor.MiddleCenter;
+                    textMesh.alignment = TextAlignment.Center;
+                    textMesh.color = Color.white;
+                    Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                    if (font != null)
+                    {
+                        textMesh.font = font;
+                        Renderer labelRenderer = labelGo.GetComponent<MeshRenderer>();
+                        if (labelRenderer != null) labelRenderer.sharedMaterial = font.material;
+                    }
+                    _pickupLabels[p.Id] = textMesh;
+                }
+
+                bool show = !p.Collected;
+                t.gameObject.SetActive(show);
+                if (!show) continue;
+                t.position = ArenaSpace.ToWorld(p.Position) + Vector3.up * 0.5f;
+                t.localScale = new Vector3(0.7f, 0.5f, 0.7f);
+                PlaceholderVisuals.SetColor(_pickupRenderers[p.Id], PickupColor(p.UpgradeIndex));
+
+                bool close = IsLocalPlayerClose(sim, p.Position);
+                TextMesh label;
+                if (_pickupLabels.TryGetValue(p.Id, out label) && label != null)
+                    label.gameObject.SetActive(close);
+            }
+
+            RemoveStale(_pickupViews, _pickupRenderers);
+            _stale.Clear();
+            foreach (KeyValuePair<int, TextMesh> pair in _pickupLabels)
+                if (!_seen.Contains(pair.Key)) _stale.Add(pair.Key);
+            for (int i = 0; i < _stale.Count; i++) _pickupLabels.Remove(_stale[i]);
+        }
+
+        private bool IsLocalPlayerClose(CombatSimulation sim, Vec2 position)
+        {
+            if (LocalPlayerId >= 0)
+            {
+                PlayerState local = sim.GetPlayer(LocalPlayerId);
+                return local != null && !local.IsDefeated
+                    && Vec2.Distance(local.Position, position) <= PickupLabelRange;
+            }
+
+            for (int i = 0; i < sim.Players.Count; i++)
+            {
+                PlayerState p = sim.Players[i];
+                if (p.IsDefeated) continue;
+                if (Vec2.Distance(p.Position, position) <= PickupLabelRange) return true;
+            }
+            return false;
+        }
+
+        private static string PickupDescription(int upgradeIndex)
+        {
+            UpgradeSpec[] catalog = DefaultContent.UpgradeCatalog();
+            if (upgradeIndex < 0 || upgradeIndex >= catalog.Length) return string.Empty;
+            return catalog[upgradeIndex].DisplayName;
+        }
+
+        private static Color PickupColor(int upgradeIndex)
+        {
+            switch (upgradeIndex)
+            {
+                case 0: return new Color(0.4f, 0.85f, 0.5f);
+                case 1: return new Color(0.95f, 0.4f, 0.35f);
+                default: return new Color(0.45f, 0.6f, 0.95f);
+            }
         }
 
         private void RenderAimMarkers(CombatSimulation sim)

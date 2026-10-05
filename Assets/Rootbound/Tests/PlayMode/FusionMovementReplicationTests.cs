@@ -111,10 +111,11 @@ namespace Rootbound.Tests
                 Assert.That(hostMatch.Simulation.GetPlayer(0).Position.Y, Is.GreaterThan(startY + 0.2f),
                     "Host player did not move.");
                 yield return WaitUntil(() => clientMatch.NetPlayer0Position.z > startY + 0.2f, 8f);
+                hostMatch.HasHostCommandOverride = false;
+                yield return new WaitForSeconds(0.6f);
                 Assert.That(clientMatch.NetPlayer0Position.z,
                     Is.EqualTo(hostMatch.Simulation.GetPlayer(0).Position.Y).Within(0.3f),
                     "Movement did not replicate.");
-                hostMatch.HasHostCommandOverride = false;
 
                 // --- Lobby has no enemies until the host starts the encounter ---
                 Assert.That(hostMatch.Simulation.Enemies.Count, Is.EqualTo(0), "Lobby should start without enemies.");
@@ -179,6 +180,16 @@ namespace Rootbound.Tests
                 yield return WaitUntil(() => clientMatch.Simulation.Cages.Count > 0
                     && clientMatch.Simulation.Cages[0].IsIgnited, 8f);
                 Assert.That(clientMatch.Simulation.Cages[0].IsIgnited, Is.True, "Ignition did not replicate.");
+
+                // --- Room advance (upgrade choice) replicates ---
+                for (int i = 0; i < hostMatch.Simulation.Enemies.Count; i++)
+                    hostMatch.Simulation.Enemies[i].Health.ApplyDamage(1000f);
+                yield return WaitUntil(() => hostMatch.IsUpgradePending, 8f);
+                Assert.That(hostMatch.IsUpgradePending, Is.True, "No upgrade choice after clearing the room.");
+                hostMatch.ChooseUpgrade(0);
+                yield return WaitUntil(() => hostMatch.CurrentRoomIndex == 1, 8f);
+                yield return WaitUntil(() => clientMatch.CurrentRoomIndex == 1, 8f);
+                Assert.That(clientMatch.CurrentRoomIndex, Is.EqualTo(1), "Room advance did not replicate to the client.");
             }
             finally
             {

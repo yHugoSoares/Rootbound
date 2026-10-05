@@ -11,6 +11,13 @@ namespace Rootbound.Unity
         public bool WaitingForStart;
         public string WaitingLabel = string.Empty;
         public int LocalPlayerId = -1;
+        public int RoomIndex;
+        public int RoomCount;
+        public string RoomName = string.Empty;
+        public bool RunComplete;
+        public bool RunFailed;
+        public bool UpgradePending;
+        public string[] UpgradeOptions = new string[0];
 
         private CombatSimulation _sim;
         private GUIStyle _style;
@@ -66,7 +73,23 @@ namespace Rootbound.Unity
                 localAlive = local != null && !local.IsDefeated;
             }
 
-            if (allDown || (cleared && localAlive))
+            if (RoomCount > 0)
+                GUI.Label(new Rect(Screen.width - 260f, 44f, 244f, 22f),
+                    "Room " + Mathf.Clamp(RoomIndex + 1, 1, RoomCount) + " / " + RoomCount +
+                    (string.IsNullOrEmpty(RoomName) ? string.Empty : "  " + RoomName), _style);
+
+            if (RunComplete || RunFailed)
+            {
+                string title = RunComplete ? "Run Complete" : "Run Failed";
+                string subtitle = RunComplete ? "Press R to replay" : "Press R to retry";
+                Rect box = new Rect(Screen.width * 0.5f - 190f, 70f, 380f, 64f);
+                GUI.color = new Color(0f, 0f, 0f, 0.7f);
+                GUI.Box(box, GUIContent.none);
+                GUI.color = Color.white;
+                GUI.Label(new Rect(box.x + 16f, box.y + 8f, box.width, 24f), title, _style);
+                GUI.Label(new Rect(box.x + 16f, box.y + 32f, box.width, 24f), subtitle, _style);
+            }
+            else if (!WaitingForStart && (allDown || (cleared && localAlive)))
             {
                 string title = cleared ? "Region Reclaimed" : "All Creatures Down";
                 string subtitle = cleared ? "Press R to run it back" : "Press R to restart";
