@@ -8,8 +8,8 @@ Platform policy is in `docs/ENVIRONMENT.md`.
 ## Current status (Milestone 2 closeout)
 
 - Unity compile: **succeeded** with Photon Fusion imported (no `error CS`).
-- Latest full run at `62198f0` (Editor closed): core **54/54**, Unity EditMode
-  **54/54**, Unity PlayMode **11/11**.
+- Latest full run (Editor closed, Milestone 3): core **68/68**, Unity EditMode
+  **68/68**, Unity PlayMode **11/11**.
 - PlayMode includes a **connection gate** (host code, join, host sees peer, clean
   leave/shutdown, fresh host/join, failed join, solo fallback) and one combined
   **combat replication** test (movement, attack, health, enemies, cage,
@@ -83,9 +83,19 @@ observed numbers for correctness, remote-state smoothness, or local input
 responsiveness. Remote state is applied as-is (host-confirmed); **this is not
 prediction** and no prediction is implemented. Do not claim interpolation.
 
-### Milestone 3
+### Milestone 3 (implemented)
 
-See `docs/MILESTONE3_PLAN.md` (plan only, not implemented).
+- Three authored rooms (Rootway 6 Blightlings, Blight Hollow 4+3 Sporelings,
+  Heartwood finale 5+3), a host-authoritative run loop (advance on clear,
+  victory/defeat/R to replay), and one additional enemy type (Sporeling) in
+  mixed groups.
+- Upgrades between rooms are **ground pickups**: coloured cylinders with a
+  world-space effect label shown when a local player is within ~3 m; collect with
+  **E** (gamepad North/Y). Host-authoritative online (pickups replicated;
+  picking player receives the upgrade). Offline co-op supported.
+- Tests: core 68/68, EditMode 68/68, PlayMode 11/11. Online pickup collection is
+  code-complete but not yet manually re-confirmed on two windows.
+- Original plan: `docs/MILESTONE3_PLAN.md`.
 
 ## Milestone 2 dependency verification (Fusion import)
 
