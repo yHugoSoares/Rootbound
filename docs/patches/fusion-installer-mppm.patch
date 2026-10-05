@@ -1,0 +1,103 @@
+# Fusion Installer MPPM patch
+
+- **Fusion version:** 2.1.3 (Build 2390, `Fusion.Runtime 2.1.3.0`)
+- **File:** `Assets/Photon/Fusion/Editor/Fusion.Unity.Editor.cs`
+- **Region:** `Assets/Photon/Fusion/Editor/FusionInstaller.cs`, `static FusionInstaller()`
+- **Marker:** `ROOTBOUND_PATCH(FusionInstaller-MPPM)`
+
+## Why
+
+Fusion's `[InitializeOnLoad] FusionInstaller` static constructor reads
+`<project>/Packages/manifest.json` **unconditionally** (line ~15541) to decide
+whether to install `com.unity.nuget.mono-cecil` and set scripting defines.
+
+MPPM virtual players (`Library/VP/mppm*/`) are launched with `-noUpm` and
+`-library-redirect ../..`, and MPPM creates the `Packages` directory **empty**
+(`VirtualProjectFileRepository.CreateProject`, line 54). There is no manifest, so
+`File.ReadAllText` throws `FileNotFoundException` in the static constructor
+during virtual-player activation:
+
+```
+System.IO.FileNotFoundException: Could not find file ".../Library/VP/mppm.../Packages/manifest.json"
+  at System.IO.File.ReadAllText
+  at Fusion.Editor.FusionInstaller..cctor () [Fusion.Unity.Editor.cs:15541]
+```
+
+The installer's package/define work is unnecessary in a virtual player: UPM is
+disabled and packages/defines are inherited from the main project (symlinked
+`ProjectSettings`, redirected `Library`).
+
+## Patch (before -> after)
+
+Before:
+
+```csharp
+static FusionInstaller() {
+  if (PlayerSettings.runInBackground == false) {
+    FusionEditorLog.LogInstaller($"Setting {nameof(PlayerSettings)}.{nameof(PlayerSettings.runInBackground)} to true");
+    PlayerSettings.runInBackground = true;
+  }
+
+  var manifest = Path.Combine(Path.GetDirectoryName(Application.dataPath) ?? string.Empty, PackagesDir, ManifestFile);
+
+  if (File.ReadAllText(manifest).Contains(PackageToSearch)) {
+    UpdateDefinesForAllTargets();
+  } else {
+    FusionEditorLog.LogInstaller($"Installing '{PackageToInstall}' package");
+    Client.Add(PackageToInstall);
+  }
+}
+```
+
+After:
+
+```csharp
+static FusionInstaller() {
+  // ROOTBOUND_PATCH(FusionInstaller-MPPM)
+  var manifest = Path.Combine(Path.GetDirectoryName(Application.dataPath) ?? string.Empty, PackagesDir, ManifestFile);
+
+  if (!File.Exists(manifest) && FusionMppm.Status == FusionMppmStatus.VirtualInstance) {
+    FusionEditorLog.LogInstaller($"Fusion: no {ManifestFile} (MPPM virtual project); skipping package installation.");
+    return;
+  }
+
+  if (PlayerSettings.runInBackground == false) {
+    FusionEditorLog.LogInstaller($"Setting {nameof(PlayerSettings)}.{nameof(PlayerSettings.runInBackground)} to true");
+    PlayerSettings.runInBackground = true;
+  }
+
+  if (!File.Exists(manifest)) {
+    Debug.LogError($"[Fusion] {ManifestFile} not found at '{manifest}' and this is not an MPPM virtual project. " +
+                   $"Add '{PackageToInstall}' to the project manifest, then restart Unity.");
+    return;
+  }
+
+  if (File.ReadAllText(manifest).Contains(PackageToSearch)) {
+    UpdateDefinesForAllTargets();
+  } else {
+    FusionEditorLog.LogInstaller($"Installing '{PackageToInstall}' package");
+    Client.Add(PackageToInstall);
+  }
+}
+```
+
+Notes:
+- Uses Fusion's supported MPPM API `FusionMppm.Status` (no ad-hoc folder-name match
+  of our own); MPPM itself is identified by the package's own logic.
+- The virtual-player branch returns **before any write** (`runInBackground` included).
+- Main Editor with a manifest: original behavior preserved.
+- Other context without a manifest: actionable `Debug.LogError`, no silent swallow.
+- No exceptions are caught/swallowed; no manifest is created or copied.
+
+## Reapply after SDK updates
+
+Fusion ships this as generated source inside the `.unitypackage`; a Fusion
+reimport/update **overwrites** the file and removes the patch.
+
+1. Keep `Assets/Photon` in version control (checkpointed with the project).
+2. After any Fusion SDK update, reapply the "After" snippet above.
+3. Verify presence (read-only): menu `Rootbound > Verify Fusion MPPM Patch`, the
+   PlayMode test `FusionInstallerPatchPresenceTests`, or
+   `grep "ROOTBOUND_PATCH(FusionInstaller-MPPM)" Assets/Photon/Fusion/Editor/Fusion.Unity.Editor.cs`.
+
+No automatic vendor-code rewriting is performed.

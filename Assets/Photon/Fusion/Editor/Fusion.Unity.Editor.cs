@@ -15531,12 +15531,29 @@ namespace Fusion.Editor {
     private const string ManifestFile = "manifest.json";
 
     static FusionInstaller() {
+      // ROOTBOUND_PATCH(FusionInstaller-MPPM)
+      // MPPM virtual players are launched with -noUpm and a redirected Library and
+      // have no Packages/manifest.json (MPPM creates an empty Packages directory);
+      // they inherit the main project's packages and, via the symlinked
+      // ProjectSettings, its scripting defines. Skip installer work entirely and
+      // write nothing. Fusion.FusionMppm.Status is Fusion's supported MPPM API.
+      var manifest = Path.Combine(Path.GetDirectoryName(Application.dataPath) ?? string.Empty, PackagesDir, ManifestFile);
+
+      if (!File.Exists(manifest) && FusionMppm.Status == FusionMppmStatus.VirtualInstance) {
+        FusionEditorLog.LogInstaller($"Fusion: no {ManifestFile} (MPPM virtual project); skipping package installation.");
+        return;
+      }
+
       if (PlayerSettings.runInBackground == false) {
         FusionEditorLog.LogInstaller($"Setting {nameof(PlayerSettings)}.{nameof(PlayerSettings.runInBackground)} to true");
         PlayerSettings.runInBackground = true;
       }
 
-      var manifest = Path.Combine(Path.GetDirectoryName(Application.dataPath) ?? string.Empty, PackagesDir, ManifestFile);
+      if (!File.Exists(manifest)) {
+        Debug.LogError($"[Fusion] {ManifestFile} not found at '{manifest}' and this is not an MPPM virtual project. " +
+                       $"Add '{PackageToInstall}' to the project manifest, then restart Unity.");
+        return;
+      }
 
       if (File.ReadAllText(manifest).Contains(PackageToSearch)) {
         UpdateDefinesForAllTargets();
