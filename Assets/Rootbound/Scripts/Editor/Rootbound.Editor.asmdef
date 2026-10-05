@@ -5,6 +5,7 @@
         "Rootbound.Core",
         "Rootbound.Unity",
         "Rootbound.Fusion",
+        "Photon.Realtime",
         "Unity.RenderPipelines.Core.Runtime",
         "Unity.RenderPipelines.Universal.Runtime"
     ],

@@ -102,6 +102,16 @@ Unity version or platform. Repository secrets: `UNITY_LICENSE` (the `.ulf`
 contents) + `UNITY_EMAIL` + `UNITY_PASSWORD` for Personal; `UNITY_SERIAL` +
 email/password for Pro. Never commit these.
 
+Alternative (recommended on a licensed machine): `.github/workflows/build-selfhosted.yml`
+runs on a **self-hosted macOS runner** using its locally installed and licensed
+Unity editor, so **no license secrets are needed**. Setup: register the machine as
+a GitHub Actions runner with the labels `self-hosted` and `macOS`; install Unity
+`6000.0.84f1` with **Mac + Windows build support**; optionally add the
+`PHOTON_APP_ID` secret for online builds, and a `UNITY_PATH` repository variable
+if the editor isn't at the default Hub path. It invokes
+`Rootbound.EditorTools.RootboundBuild.PerformBuild` (which also injects
+`PHOTON_APP_ID` into `PhotonAppSettings` when set).
+
 Known limitation: CI builds have **no Fusion App ID** because
 `PhotonAppSettings.asset` is git-ignored, so they run offline/local co-op. To
 enable online in CI, add a `PHOTON_APP_ID` secret and a custom `buildMethod` that

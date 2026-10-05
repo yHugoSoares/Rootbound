@@ -1,0 +1,75 @@
+name: Build (self-hosted)
+
+# Runs on a self-hosted macOS runner that has the pinned Unity editor installed
+# and licensed, which avoids Unity license secrets entirely.
+#
+# Setup:
+#   1. Register the machine as a GitHub Actions runner with the labels
+#      `self-hosted` and `macOS` (repo Settings > Actions > Runners).
+#   2. Install Unity 6000.0.84f1 with Mac + Windows build support.
+#   3. Optional: set the PHOTON_APP_ID repository secret so builds can play
+#      online; without it they are offline / local co-op only.
+#   4. If the editor is not in the default location, set the UNITY_PATH
+#      repository variable/secret to its path.
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+jobs:
+  build:
+    name: Build ${{ matrix.targetPlatform }}
+    runs-on: [self-hosted, macOS]
+    strategy:
+      fail-fast: false
+      matrix:
+        targetPlatform:
+          - StandaloneOSX
+          - StandaloneWindows64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          lfs: true
+
+      - name: Build
+        env:
+          ROOTBOUND_BUILD_TARGET: ${{ matrix.targetPlatform }}
+          PHOTON_APP_ID: ${{ secrets.PHOTON_APP_ID }}
+          UNITY_PATH: ${{ vars.UNITY_PATH }}
+        run: |
+          UNITY="${UNITY_PATH:-/Applications/Unity/Hub/Editor/6000.0.84f1/Unity.app/Contents/MacOS/Unity}"
+          if [ ! -x "$UNITY" ]; then
+            echo "::error::Unity editor not found at $UNITY (set UNITY_PATH)."
+            exit 1
+          fi
+          "$UNITY" -batchmode -nographics -quit \
+            -projectPath "$GITHUB_WORKSPACE" \
+            -executeMethod Rootbound.EditorTools.RootboundBuild.PerformBuild \
+            -logFile -
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Rootbound-${{ matrix.targetPlatform }}
+          path: build/${{ matrix.targetPlatform }}
+          if-no-files-found: error
+
+  release:
+    name: Publish release
+    if: ${{ startsWith(github.ref, 'refs/tags/v') && needs.build.result == 'success' }}
+    needs: build
+    runs-on: [self-hosted, macOS]
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
+          generate_release_notes: true
