@@ -33,6 +33,7 @@ namespace Rootbound.Unity
         private CreatureSpec[] _playerSpecs;
         private bool _upgradePending;
         private readonly UpgradeField _upgradeField = new UpgradeField();
+        private readonly System.Random _rng = new System.Random();
 
         private void Awake()
         {
@@ -102,10 +103,9 @@ namespace Rootbound.Unity
 
         private void SpawnUpgrades()
         {
-            UpgradeSpec[] catalog = DefaultContent.UpgradeCatalog();
-            int[] indices = new int[catalog.Length];
-            for (int i = 0; i < indices.Length; i++) indices[i] = i;
-            _upgradeField.Spawn(DefaultContent.UpgradePositions(), indices);
+            Vec2[] positions = DefaultContent.UpgradePositions();
+            int[] indices = DefaultContent.PickUpgradeIndices(positions.Length, PlayerKinds(), _rng);
+            _upgradeField.Spawn(positions, indices);
             _upgradePending = true;
             if (view != null) view.SetPickups(_upgradeField.Pickups);
         }

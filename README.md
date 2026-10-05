@@ -1,14 +1,20 @@
-# Rootbound: Fractured Realms
+# DUATBORN
 
-![Rootbound logo](docs/assets/RootboundLogo.jpg)
+![Duatborn logo](docs/assets/Duatborn.jpg)
 
-An original cooperative action roguelite prototype (working title). Strange
-creatures enter a fractured world-tree and combine abilities to reclaim
-corrupted regions. Isometric action combat, solo or 2-4 players, PC-first.
+An original cooperative action roguelite prototype. Egyptian-inspired fantasy:
+animal-shaped guardians descend through a fractured Duat and combine their rites
+to reopen the sun's route and restore dawn. Isometric action combat, solo or
+2-4 players, PC-first.
+
+Historical working titles: "Rootbound: Fractured Realms", then "Dawnkeepers:
+Gates of Duat". The repository, project folder, namespaces, and internal type
+names retain the "Rootbound" name; only player-facing branding uses Duatborn.
+See `docs/CREATIVE_DIRECTION.md`.
 
 This repository currently contains **Milestone 1**: one local combat arena where
-Root Guardian and Ember Moth fight Blightlings, with the Root Cage ignition
-co-op interaction.
+the Dune Warden and Sunwing fight Hollow Sentinels, with the Binding Seal
+consecration co-op interaction.
 
 > Status: the project **compiles in Unity `6000.0.84f1` (arm64)** and the arena
 > scene runs headlessly in Play Mode. Automated tests: **28 EditMode/core + 1
@@ -24,7 +30,7 @@ See `docs/ENVIRONMENT.md`.
 - Unity 6.0 LTS **`6000.0.84f1`** (pinned in `ProjectSettings/ProjectVersion.txt`).
   Unity 6.3 LTS `6000.3.25f1` is also a supported alternative.
 - .NET SDK (for the pure-core test project only; verified with 10.0.300).
-- Git. Keep the clone at a short path (e.g. `C:\dev\Rootbound`) on Windows.
+- Git. Keep the clone at a short path (e.g. `C:\dev\duatborn`) on Windows.
 
 ## Open the project
 
@@ -124,6 +130,7 @@ Procedural generation, sanctuary, dialogue, bosses, inventory/crafting, public
 matchmaking, host migration, cross-platform release work, and a large upgrade
 catalogue are explicitly out of scope.
 
-Rootbound is an original work. It is inspired by Norse imagery but does not
-present invented lore as authentic mythology and copies no assets, characters,
-UI, dialogue, or implementation from existing games. The title is provisional.
+Duatborn is an original work. It draws on Egyptian-inspired imagery as fiction
+but does not present invented lore as authentic belief and copies no assets,
+characters, UI, dialogue, or implementation from existing games. The name is
+final.

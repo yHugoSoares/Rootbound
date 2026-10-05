@@ -79,6 +79,7 @@ namespace Rootbound.Core
         public float MaxHealth;
         public float MoveSpeed;
         public float BodyRadius;
+        public float LifeOnKill;
         public DodgeSpec Dodge = new DodgeSpec();
         public AttackSpec Primary = new AttackSpec();
         public SpecialSpec Special = new SpecialSpec();

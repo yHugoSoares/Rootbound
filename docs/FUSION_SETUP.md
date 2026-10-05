@@ -1,5 +1,7 @@
 # Photon Fusion 2 setup (Milestone 2 dependency)
 
+> Branding note: this game is **Duatborn**; historical titles "Rootbound: Fractured Realms" and "Dawnkeepers: Gates of Duat" are superseded. Internal identifiers, namespaces, assemblies, and `Assets/Rootbound` keep the old name (`docs/CREATIVE_DIRECTION.md`).
+
 ## Current state (verified on this machine, 2026-10-02)
 
 - **Fusion 2.1.3 is imported** at `Assets/Photon/Fusion`; loaded assemblies are

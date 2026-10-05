@@ -93,8 +93,15 @@ namespace Rootbound.EditorTools
             Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (material == null)
             {
-                material = PlaceholderVisuals.CreateMaterial(new Color(0.1f, 0.14f, 0.12f));
+                material = PlaceholderVisuals.CreateMaterial(new Color(0.16f, 0.14f, 0.10f));
                 AssetDatabase.CreateAsset(material, path);
+            }
+            else
+            {
+                Color sand = new Color(0.16f, 0.14f, 0.10f);
+                material.color = sand;
+                if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", sand);
+                EditorUtility.SetDirty(material);
             }
             return material;
         }

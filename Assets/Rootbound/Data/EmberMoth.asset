@@ -15,10 +15,11 @@ MonoBehaviour:
   spec:
     Kind: 1
     Id: ember_moth
-    DisplayName: Ember Moth
+    DisplayName: Sunwing
     MaxHealth: 95
     MoveSpeed: 5.8
     BodyRadius: 0.35
+    LifeOnKill: 0
     Dodge:
       Distance: 4
       Duration: 0.18

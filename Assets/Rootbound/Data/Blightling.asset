@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   spec:
     Id: blightling
-    DisplayName: Blightling
+    DisplayName: Hollow Sentinel
     MaxHealth: 40
     MoveSpeed: 2.6
     BodyRadius: 0.4
@@ -25,3 +25,5 @@ MonoBehaviour:
     AttackWindup: 0.35
     AttackActive: 0.1
     AttackRecovery: 0.25
+    DeathBurstRadius: 0
+    DeathBurstDamage: 0

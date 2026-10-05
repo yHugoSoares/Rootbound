@@ -7,7 +7,10 @@ namespace Rootbound.Core
         MaxHealth = 0,
         PrimaryDamage = 1,
         MoveSpeed = 2,
-        CooldownReduction = 3
+        CooldownReduction = 3,
+        SpecialRadius = 4,
+        SpecialDuration = 5,
+        LifeOnKill = 6
     }
 
     [System.Serializable]
@@ -21,6 +24,27 @@ namespace Rootbound.Core
 
     public static class UpgradeRules
     {
+        public static bool AppliesTo(UpgradeSpec upgrade, CreatureKind kind)
+        {
+            if (upgrade == null) return false;
+            switch (upgrade.Kind)
+            {
+                case UpgradeKind.SpecialDuration:
+                    return kind == CreatureKind.RootGuardian;
+                default:
+                    return true;
+            }
+        }
+
+        public static bool AppliesToAny(UpgradeSpec upgrade, CreatureKind[] creatures)
+        {
+            if (upgrade == null) return false;
+            if (creatures == null || creatures.Length == 0) return true;
+            for (int i = 0; i < creatures.Length; i++)
+                if (AppliesTo(upgrade, creatures[i])) return true;
+            return false;
+        }
+
         public static void Apply(UpgradeSpec upgrade, CreatureSpec spec)
         {
             if (upgrade == null || spec == null) return;
@@ -37,6 +61,15 @@ namespace Rootbound.Core
                     break;
                 case UpgradeKind.CooldownReduction:
                     spec.Primary.Cooldown = Math.Max(0.05f, spec.Primary.Cooldown - upgrade.Amount);
+                    break;
+                case UpgradeKind.SpecialRadius:
+                    spec.Special.Radius += upgrade.Amount;
+                    break;
+                case UpgradeKind.SpecialDuration:
+                    spec.Special.Duration += upgrade.Amount;
+                    break;
+                case UpgradeKind.LifeOnKill:
+                    spec.LifeOnKill += upgrade.Amount;
                     break;
             }
         }

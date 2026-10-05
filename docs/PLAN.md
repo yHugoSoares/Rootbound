@@ -1,4 +1,6 @@
-# Rootbound: Fractured Realms — Implementation Plan and Assumptions
+# Duatborn (formerly Rootbound: Fractured Realms) — Implementation Plan and Assumptions
+
+> Branding note: this game is **Duatborn**; historical titles "Rootbound: Fractured Realms" and "Dawnkeepers: Gates of Duat" are superseded. Internal identifiers, namespaces, assemblies, and `Assets/Rootbound` keep the old name (`docs/CREATIVE_DIRECTION.md`).
 
 Status: living document. Section 1 below records the original authoring
 environment (Unity was not installed then). Unity is now installed and the project

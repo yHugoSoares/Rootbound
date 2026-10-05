@@ -6,13 +6,13 @@ namespace Rootbound.Unity
 {
     public sealed class CombatView : MonoBehaviour
     {
-        private static readonly Color RootColor = new Color(0.32f, 0.6f, 0.28f);
-        private static readonly Color MothColor = new Color(0.95f, 0.45f, 0.15f);
-        private static readonly Color EnemyColor = new Color(0.55f, 0.2f, 0.62f);
-        private static readonly Color RestrainedColor = new Color(0.35f, 0.25f, 0.5f);
-        private static readonly Color CageColor = new Color(0.25f, 0.7f, 0.35f);
-        private static readonly Color CageIgnitedColor = new Color(1f, 0.45f, 0.1f);
-        private static readonly Color ProjectileColor = new Color(1f, 0.75f, 0.2f);
+        private static readonly Color RootColor = new Color(0.76f, 0.63f, 0.35f);
+        private static readonly Color MothColor = new Color(0.91f, 0.64f, 0.24f);
+        private static readonly Color EnemyColor = new Color(0.42f, 0.43f, 0.46f);
+        private static readonly Color RestrainedColor = new Color(0.25f, 0.35f, 0.6f);
+        private static readonly Color CageColor = new Color(0.18f, 0.37f, 0.64f);
+        private static readonly Color CageIgnitedColor = new Color(0.95f, 0.71f, 0.25f);
+        private static readonly Color ProjectileColor = new Color(1f, 0.82f, 0.4f);
         private static readonly Color TargetColor = new Color(0.4f, 0.9f, 1f);
         private static readonly Color TargetClampedColor = new Color(1f, 0.6f, 0.2f);
 
@@ -22,6 +22,16 @@ namespace Rootbound.Unity
         private readonly Dictionary<int, Renderer> _pickupRenderers = new Dictionary<int, Renderer>();
         private readonly Dictionary<int, TextMesh> _pickupLabels = new Dictionary<int, TextMesh>();
         private IReadOnlyList<UpgradePickupState> _pickups;
+        private readonly HashSet<int> _defeatedEnemies = new HashSet<int>();
+        private readonly List<DeathBurstView> _bursts = new List<DeathBurstView>();
+
+        private sealed class DeathBurstView
+        {
+            public GameObject Go;
+            public float Elapsed;
+            public float Duration;
+            public float Radius;
+        }
 
         public int LocalPlayerId = -1;
         public float PickupLabelRange = 3f;
@@ -43,6 +53,9 @@ namespace Rootbound.Unity
         public void Bind(CombatSimulation sim)
         {
             ClearChildren();
+            _defeatedEnemies.Clear();
+            _bursts.Clear();
+            EnsureDressing();
             _players.Clear();
             _enemies.Clear();
             _cages.Clear();
@@ -89,6 +102,7 @@ namespace Rootbound.Unity
         {
             RenderPlayers(sim);
             RenderEnemies(sim, dt);
+            UpdateBursts(dt);
             RenderAimMarkers(sim);
             SyncCages(sim);
             SyncProjectiles(sim);
@@ -180,13 +194,74 @@ namespace Rootbound.Unity
             return catalog[upgradeIndex].DisplayName;
         }
 
+        private void EnsureDressing()
+        {
+            GameObject root = new GameObject("GateDressing");
+            root.transform.SetParent(transform, false);
+
+            Color sandstone = new Color(0.72f, 0.62f, 0.4f);
+            Color inscription = new Color(0.55f, 0.5f, 0.35f);
+
+            GameObject leftPillar = PlaceholderVisuals.CreateCylinder("GateLeft", sandstone);
+            leftPillar.transform.SetParent(root.transform, false);
+            leftPillar.transform.position = new Vector3(-4f, 3f, 8f);
+            leftPillar.transform.localScale = new Vector3(0.9f, 3f, 0.9f);
+
+            GameObject rightPillar = PlaceholderVisuals.CreateCylinder("GateRight", sandstone);
+            rightPillar.transform.SetParent(root.transform, false);
+            rightPillar.transform.position = new Vector3(4f, 3f, 8f);
+            rightPillar.transform.localScale = new Vector3(0.9f, 3f, 0.9f);
+
+            GameObject lintel = PlaceholderVisuals.CreateCylinder("GateLintel", sandstone);
+            lintel.transform.SetParent(root.transform, false);
+            lintel.transform.position = new Vector3(0f, 6.1f, 8f);
+            lintel.transform.rotation = Quaternion.Euler(0f, 0f, 90f);
+            lintel.transform.localScale = new Vector3(0.7f, 4.5f, 0.7f);
+
+            GameObject floorRing = PlaceholderVisuals.CreateCylinder("FloorInscription", inscription);
+            floorRing.transform.SetParent(root.transform, false);
+            floorRing.transform.position = new Vector3(0f, 0.02f, 0f);
+            floorRing.transform.localScale = new Vector3(12f, 0.02f, 12f);
+        }
+
+        private void SpawnDeathBurst(Vec2 position, float radius)
+        {
+            GameObject go = PlaceholderVisuals.CreateCylinder("Burst_" + (_bursts.Count + 1), new Color(0.31f, 0.76f, 0.72f));
+            go.transform.SetParent(transform, false);
+            go.transform.position = ArenaSpace.ToWorld(position) + Vector3.up * 0.03f;
+            go.transform.localScale = new Vector3(radius * 0.3f, 0.03f, radius * 0.3f);
+            DeathBurstView burst = new DeathBurstView();
+            burst.Go = go;
+            burst.Elapsed = 0f;
+            burst.Duration = 0.25f;
+            burst.Radius = radius;
+            _bursts.Add(burst);
+        }
+
+        private void UpdateBursts(float dt)
+        {
+            for (int i = _bursts.Count - 1; i >= 0; i--)
+            {
+                DeathBurstView burst = _bursts[i];
+                burst.Elapsed += dt;
+                float t = burst.Duration <= 0f ? 1f : Mathf.Clamp01(burst.Elapsed / burst.Duration);
+                float scale = burst.Radius * 2f * Mathf.Lerp(0.15f, 1f, t);
+                burst.Go.transform.localScale = new Vector3(scale, 0.03f, scale);
+                if (burst.Elapsed >= burst.Duration)
+                {
+                    Object.Destroy(burst.Go);
+                    _bursts.RemoveAt(i);
+                }
+            }
+        }
+
         private static Color PickupColor(int upgradeIndex)
         {
             switch (upgradeIndex)
             {
-                case 0: return new Color(0.4f, 0.85f, 0.5f);
-                case 1: return new Color(0.95f, 0.4f, 0.35f);
-                default: return new Color(0.45f, 0.6f, 0.95f);
+                case 0: return new Color(0.9f, 0.72f, 0.3f);
+                case 1: return new Color(0.25f, 0.45f, 0.85f);
+                default: return new Color(0.3f, 0.7f, 0.68f);
             }
         }
 
@@ -238,6 +313,17 @@ namespace Rootbound.Unity
                 EnemyState e = sim.Enemies[i];
                 Transform t;
                 if (!_enemies.TryGetValue(e.Id, out t)) continue;
+
+                if (e.IsDefeated)
+                {
+                    if (_defeatedEnemies.Add(e.Id) && e.Spec != null && e.Spec.DeathBurstRadius > 0f)
+                        SpawnDeathBurst(e.Position, e.Spec.DeathBurstRadius);
+                }
+                else
+                {
+                    _defeatedEnemies.Remove(e.Id);
+                }
+
                 bool alive = !e.IsDefeated;
                 t.gameObject.SetActive(alive);
                 if (!alive) continue;

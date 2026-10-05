@@ -1,6 +1,8 @@
 # Development environment policy
 
-Recorded so the team agrees on where Rootbound is built, tested, and shipped.
+> Branding note: this game is **Duatborn**; historical titles "Rootbound: Fractured Realms" and "Dawnkeepers: Gates of Duat" are superseded. Internal identifiers, namespaces, assemblies, and `Assets/Rootbound` keep the old name (`docs/CREATIVE_DIRECTION.md`).
+
+Recorded so the team agrees on where Duatborn is built, tested, and shipped.
 This is policy, not a claim that any environment has run the Unity project.
 
 ## Platforms
@@ -33,7 +35,7 @@ project is pinned to `6000.0.84f1`. Do not upgrade the editor silently.
 - The repository normalizes line endings via `.gitattributes` (`* text=auto`).
 - Windows and default macOS filesystems are case-insensitive. Do not create
   files or folders whose names differ only by case.
-- Keep the clone at a short path (for example `C:\dev\Rootbound`) to avoid
+- Keep the clone at a short path (for example `C:\dev\duatborn`) to avoid
   Windows `MAX_PATH` issues with Unity and generated `Library/` content.
 - Generated caches (`Library/`, `Temp/`, `Logs/`, `obj/`, `bin/`, `Builds/`,
   `UserSettings/`) are ignored and must never be committed.

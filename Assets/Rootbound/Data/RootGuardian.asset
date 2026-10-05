@@ -15,10 +15,11 @@ MonoBehaviour:
   spec:
     Kind: 0
     Id: root_guardian
-    DisplayName: Root Guardian
+    DisplayName: Dune Warden
     MaxHealth: 160
     MoveSpeed: 4.2
     BodyRadius: 0.45
+    LifeOnKill: 0
     Dodge:
       Distance: 3
       Duration: 0.28

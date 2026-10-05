@@ -706,8 +706,17 @@ namespace Rootbound.Core
             if (e.Health.IsDefeated)
             {
                 Raise(SimEventKind.EntityDefeated, sourceId, e.Id, e.Position, 0f, 0);
+                ApplyLifeOnKill(sourceId);
                 ApplyDeathBurst(e);
             }
+        }
+
+        private void ApplyLifeOnKill(int sourceId)
+        {
+            PlayerState killer = GetPlayer(sourceId);
+            if (killer == null || killer.Spec == null || killer.Health.IsDefeated) return;
+            if (killer.Spec.LifeOnKill <= 0f) return;
+            killer.Health.Heal(killer.Spec.LifeOnKill);
         }
 
         private void ApplyDeathBurst(EnemyState e)

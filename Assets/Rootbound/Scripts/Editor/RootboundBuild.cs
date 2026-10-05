@@ -13,7 +13,7 @@ namespace Rootbound.EditorTools
         {
             InjectPhotonAppId();
 
-            string targetName = Environment.GetEnvironmentVariable("ROOTBOUND_BUILD_TARGET");
+            string targetName = Environment.GetEnvironmentVariable("DUATBORN_BUILD_TARGET");
             if (string.IsNullOrEmpty(targetName)) targetName = "StandaloneOSX";
 
             BuildTarget target;
@@ -30,8 +30,8 @@ namespace Rootbound.EditorTools
 
             string dir = "build/" + targetName;
             string output = target == BuildTarget.StandaloneOSX
-                ? dir + "/Rootbound.app"
-                : dir + "/Rootbound.exe";
+                ? dir + "/Duatborn.app"
+                : dir + "/Duatborn.exe";
 
             string[] scenes = new string[EditorBuildSettings.scenes.Length];
             int count = 0;

@@ -5,11 +5,20 @@ headlessly** on the Mac with Unity `6000.0.84f1`. This document records exactly
 what was verified, what was fixed, and what still requires the GUI or hardware.
 Platform policy is in `docs/ENVIRONMENT.md`.
 
+> Naming: the game is branded **Duatborn** (no subtitle). Historical titles
+> "Rootbound: Fractured Realms" and "Dawnkeepers: Gates of Duat" are superseded.
+> Internal identifiers, namespaces, assemblies, build method names, and the
+> `Assets/Rootbound` path keep the "Rootbound" name; see
+> `docs/CREATIVE_DIRECTION.md`.
+
 ## Current status (Milestone 2 closeout)
 
 - Unity compile: **succeeded** with Photon Fusion imported (no `error CS`).
-- Latest full run (Editor closed, Milestone 3): core **68/68**, Unity EditMode
-  **68/68**, Unity PlayMode **11/11**.
+- Latest full run (Editor closed, Milestone 3): core **73/73**, Unity EditMode
+  **73/73**, Unity PlayMode **11/11**.
+- **Multiplayer manually validated** by the developer in a two-peer session
+  (host/join, ownership, client combat, cage/ignition, ground pickups, return to
+  menu). No machine/build/network-condition measurements were captured.
 - PlayMode includes a **connection gate** (host code, join, host sees peer, clean
   leave/shutdown, fresh host/join, failed join, solo fallback) and one combined
   **combat replication** test (movement, attack, health, enemies, cage,
@@ -58,7 +67,7 @@ Exact steps (do not upgrade Unity):
 1. Unity Hub -> Installs -> `6000.0.84f1` -> gear -> *Add modules* ->
    **Mac Build Support (IL2CPP)** (and *Mac Build Support (Mono)* if offered).
 2. `File > Build Settings` -> platform **macOS** -> enable **Development Build**
-   -> *Build* to `Builds/RootboundDev.app`.
+   -> *Build* to `Builds/DuatbornDev.app`.
 3. The App ID is compiled in from `PhotonAppSettings.asset` (client-side); do not
    print it. Ensure `Assets/Rootbound/Prefabs/FusionMatch.prefab` is included
    (it is referenced by `Runner.Spawn("FusionMatch", ...)`).
@@ -87,10 +96,12 @@ prediction** and no prediction is implemented. Do not claim interpolation.
 
 `.github/workflows/build.yml` uses `game-ci/unity-builder@v4` to build
 **StandaloneOSX** and **StandaloneWindows64** on `master` (and manual dispatch),
-when Unity license secrets are configured. It uploads per-platform artifacts, and
-on `v*` tags creates a GitHub Release. If no license is configured, the build is
-skipped with a warning (the `secrets` context is checked in a step, not a
-job-level `if`, which GitHub rejects).
+when Unity license secrets are configured. It uploads per-platform artifacts
+`Duatborn-macOS` / `Duatborn-Windows`, and on `v*` tags creates a GitHub Release
+with versioned archives. If no license is configured, the build is skipped with a
+warning (the `secrets` context is checked in a step, not a job-level `if`, which
+GitHub rejects). Builds output `build/<target>/Duatborn.app` (macOS) and
+`build/<target>/Duatborn.exe` (Windows); `Unity Product Name` is `Duatborn`.
 
 License (game-ci v4; there is **no activation workflow** any more): activate a
 Personal license **locally** with Unity Hub (`Preferences > Licenses > Add > Get
@@ -103,6 +114,7 @@ contents) + `UNITY_EMAIL` + `UNITY_PASSWORD` for Personal; `UNITY_SERIAL` +
 email/password for Pro. Never commit these.
 
 Alternative (recommended on a licensed machine): `.github/workflows/build-selfhosted.yml`
+(the build target is passed via the `DUATBORN_BUILD_TARGET` environment variable)
 runs on a **self-hosted macOS runner** using its locally installed and licensed
 Unity editor, so **no license secrets are needed**. Setup: register the machine as
 a GitHub Actions runner with the labels `self-hosted` and `macOS`; install Unity
@@ -125,6 +137,13 @@ workflow run has been executed here; Unity builds have not been produced.
   Heartwood finale 5+3), a host-authoritative run loop (advance on clear,
   victory/defeat/R to replay), and one additional enemy type (Sporeling) in
   mixed groups.
+- Sporeling death burst has a world-space **expanding ring** sized to
+  `EnemySpec.DeathBurstRadius` (derived on every peer from the defeated state, so
+  no extra sync).
+- Upgrade pool expanded to six, mixing flat stats (HP/damage/speed) with
+  meaningful choices (special radius, cage duration, heal-on-kill); the host (or
+  offline run) offers **three distinct random picks** per room via
+  `DefaultContent.PickUpgradeIndices`.
 - Upgrades between rooms are **ground pickups**: coloured cylinders with a
   world-space effect label shown when a local player is within ~3 m; collect with
   **E** (gamepad North/Y). Host-authoritative online (pickups replicated;

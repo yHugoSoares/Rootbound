@@ -108,13 +108,10 @@ namespace Rootbound.Fusion
         private void SpawnUpgrades()
         {
             Vec2[] positions = DefaultContent.UpgradePositions();
-            UpgradeSpec[] catalog = DefaultContent.UpgradeCatalog();
-            int count = positions.Length < catalog.Length ? positions.Length : catalog.Length;
-            int[] indices = new int[count];
-            for (int i = 0; i < count; i++) indices[i] = i;
+            int[] indices = DefaultContent.PickUpgradeIndices(positions.Length, RosterCreatures(), _rng);
             _upgradeField.Spawn(positions, indices);
-            PickupCount = count;
-            for (int i = 0; i < count; i++)
+            PickupCount = indices.Length;
+            for (int i = 0; i < indices.Length; i++)
             {
                 PickupNetData d = default(PickupNetData);
                 d.Position = ArenaSpace.ToWorld(positions[i]);
@@ -196,6 +193,7 @@ namespace Rootbound.Fusion
         private readonly UpgradeField _upgradeField = new UpgradeField();
         private readonly List<UpgradePickupState> _pickupMirror = new List<UpgradePickupState>();
         private readonly bool[] _interactThisTick = new bool[MaxPlayers];
+        private readonly System.Random _rng = new System.Random();
 
         public Vector3 LocalWorldPosition
         {
@@ -344,8 +342,8 @@ namespace Rootbound.Fusion
                 _hud.LocalPlayerId = LocalIndex();
                 _hud.WaitingForStart = !EncounterStarted;
                 _hud.WaitingLabel = HasStateAuthority
-                    ? "Waiting for players - press R to start"
-                    : "Waiting for host to start";
+                    ? "Waiting for the party - press R to break the first seal"
+                    : "Waiting for the host to break the first seal";
                 if (_rooms != null && _rooms.Length > 0)
                 {
                     int ri = Mathf.Clamp(RoomIndex, 0, _rooms.Length - 1);
@@ -417,6 +415,15 @@ namespace Rootbound.Fusion
             _builtEnemyCount = enemies;
             _builtRoomIndex = roomIndex;
             RebindView();
+        }
+
+        private CreatureKind[] RosterCreatures()
+        {
+            int count = PlayerCountNet < 1 ? 1 : PlayerCountNet;
+            if (count > MaxPlayers) count = 2;
+            CreatureKind[] kinds = new CreatureKind[count];
+            for (int i = 0; i < count; i++) kinds[i] = (CreatureKind)PlayerCreatures[i];
+            return kinds;
         }
 
         private CreatureSpec[] EnsurePlayerSpecs(int count)

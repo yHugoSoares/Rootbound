@@ -75,13 +75,13 @@ namespace Rootbound.Unity
 
             if (RoomCount > 0)
                 GUI.Label(new Rect(Screen.width - 260f, 44f, 244f, 22f),
-                    "Room " + Mathf.Clamp(RoomIndex + 1, 1, RoomCount) + " / " + RoomCount +
+                    "Gate " + Mathf.Clamp(RoomIndex + 1, 1, RoomCount) + " / " + RoomCount +
                     (string.IsNullOrEmpty(RoomName) ? string.Empty : "  " + RoomName), _style);
 
             if (RunComplete || RunFailed)
             {
-                string title = RunComplete ? "Run Complete" : "Run Failed";
-                string subtitle = RunComplete ? "Press R to replay" : "Press R to retry";
+                string title = RunComplete ? "Dawn Restored" : "Nightfall";
+                string subtitle = RunComplete ? "Press R to descend again" : "Press R to rise again";
                 Rect box = new Rect(Screen.width * 0.5f - 190f, 70f, 380f, 64f);
                 GUI.color = new Color(0f, 0f, 0f, 0.7f);
                 GUI.Box(box, GUIContent.none);
@@ -91,8 +91,8 @@ namespace Rootbound.Unity
             }
             else if (!WaitingForStart && (allDown || (cleared && localAlive)))
             {
-                string title = cleared ? "Region Reclaimed" : "All Creatures Down";
-                string subtitle = cleared ? "Press R to run it back" : "Press R to restart";
+                string title = cleared ? "Gate Restored" : "Guardians Fallen";
+                string subtitle = cleared ? "Press R to descend again" : "Press R to rise again";
                 Rect box = new Rect(Screen.width * 0.5f - 190f, 70f, 380f, 64f);
                 GUI.color = new Color(0f, 0f, 0f, 0.7f);
                 GUI.Box(box, GUIContent.none);
@@ -137,14 +137,14 @@ namespace Rootbound.Unity
 
             float x = Screen.width - 230f;
             float y = 16f;
-            GUI.Label(new Rect(x, y, 214f, 20f), "Blightlings: " + alive + " / " + _sim.Enemies.Count, _style);
+            GUI.Label(new Rect(x, y, 214f, 20f), "Sentinels: " + alive + " / " + _sim.Enemies.Count, _style);
 
             for (int i = 0; i < _sim.Cages.Count; i++)
             {
                 RootCageState cage = _sim.Cages[i];
                 string state = cage.IsIgnited ? " ignited " + cage.IgnitedTimeRemaining.ToString("0.0") + "s" : "";
                 GUI.Label(new Rect(x, y + 22f + i * 20f, 214f, 20f),
-                    "Root Cage " + cage.Remaining.ToString("0.0") + "s" + state, _style);
+                    "Binding Seal " + cage.Remaining.ToString("0.0") + "s" + state, _style);
             }
         }
 

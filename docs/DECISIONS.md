@@ -1,5 +1,7 @@
 # Decisions and tradeoffs
 
+> Branding note: this game is **Duatborn**; historical titles "Rootbound: Fractured Realms" and "Dawnkeepers: Gates of Duat" are superseded. Internal identifiers, namespaces, assemblies, and `Assets/Rootbound` keep the old name (`docs/CREATIVE_DIRECTION.md`).
+
 ## D1 - Unity 6.0 LTS `6000.0.84f1`, not the newest LTS
 
 The official release API lists both `6000.0.84f1` and `6000.3.25f1` in the LTS

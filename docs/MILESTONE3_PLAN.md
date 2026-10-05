@@ -1,5 +1,7 @@
 # Milestone 3 plan (proposal - not implemented)
 
+> Branding note: this game is **Duatborn**; historical titles "Rootbound: Fractured Realms" and "Dawnkeepers: Gates of Duat" are superseded. Internal identifiers, namespaces, assemblies, and `Assets/Rootbound` keep the old name (`docs/CREATIVE_DIRECTION.md`).
+
 Goal: turn the single arena into a small run loop, preserving the existing
 `CombatSimulation`, solo mode and Fusion Host Mode replication. No content pass
 beyond what is listed.

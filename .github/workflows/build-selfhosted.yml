@@ -10,7 +10,7 @@ name: Build (self-hosted)
 #   3. Optional: set the PHOTON_APP_ID repository secret so builds can play
 #      online; without it they are offline / local co-op only.
 #   4. If the editor is not in the default location, set the UNITY_PATH
-#      repository variable/secret to its path.
+#      repository variable to its path.
 on:
   workflow_dispatch:
   push:
@@ -18,14 +18,16 @@ on:
 
 jobs:
   build:
-    name: Build ${{ matrix.targetPlatform }}
+    name: Build ${{ matrix.label }}
     runs-on: [self-hosted, macOS]
     strategy:
       fail-fast: false
       matrix:
-        targetPlatform:
-          - StandaloneOSX
-          - StandaloneWindows64
+        include:
+          - target: StandaloneOSX
+            label: macOS
+          - target: StandaloneWindows64
+            label: Windows
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -34,7 +36,7 @@ jobs:
 
       - name: Build
         env:
-          ROOTBOUND_BUILD_TARGET: ${{ matrix.targetPlatform }}
+          DUATBORN_BUILD_TARGET: ${{ matrix.target }}
           PHOTON_APP_ID: ${{ secrets.PHOTON_APP_ID }}
           UNITY_PATH: ${{ vars.UNITY_PATH }}
         run: |
@@ -51,8 +53,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Rootbound-${{ matrix.targetPlatform }}
-          path: build/${{ matrix.targetPlatform }}
+          name: Duatborn-${{ matrix.label }}
+          path: build/${{ matrix.target }}
           if-no-files-found: error
 
   release:
@@ -68,8 +70,16 @@ jobs:
         with:
           path: artifacts
 
+      - name: Package archives
+        run: |
+          cd artifacts
+          for d in */; do
+            name="${d%/}"
+            zip -r "${name}-${{ github.ref_name }}.zip" "$name"
+          done
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/**/*
+          files: artifacts/*.zip
           generate_release_notes: true

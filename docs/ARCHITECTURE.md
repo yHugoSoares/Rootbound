@@ -1,5 +1,7 @@
 # Architecture
 
+> Branding note: this game is **Duatborn**; historical titles "Rootbound: Fractured Realms" and "Dawnkeepers: Gates of Duat" are superseded. Internal identifiers, namespaces, assemblies, and `Assets/Rootbound` keep the old name (`docs/CREATIVE_DIRECTION.md`).
+
 Describes the boundaries actually implemented in Milestone 1.
 
 ## Assembly boundaries

@@ -1,5 +1,7 @@
 # Testing
 
+> Branding note: this game is **Duatborn**; historical titles "Rootbound: Fractured Realms" and "Dawnkeepers: Gates of Duat" are superseded. Internal identifiers, namespaces, assemblies, and `Assets/Rootbound` keep the old name (`docs/CREATIVE_DIRECTION.md`).
+
 ## Environment used for these runs
 
 - macOS 26.7.1, Apple Silicon (arm64).
@@ -191,17 +193,26 @@ Confirmed:
 - [x] F1 diagnostics toggle (hidden by default; toggles once per press).
 - [x] Repeated enemy damage over time and live HUD updates.
 
+### Multiplayer (developer-confirmed)
+
+The developer manually validated multiplayer in a two-peer session and reports it
+working as expected: host/join by code, per-player ownership, client movement,
+attack, special, dodge, damage resolved once, Root Cage placement and Ember Moth
+ignition, consistent health/encounter outcome, ground-pickup upgrade collection,
+and returning to the menu. Recorded as confirmed on the developer's report. No
+specific machine, build, or network conditions were captured, and no latency or
+packet-loss measurement was taken. The automated Multi-Peer tests
+(`FusionConnectionGateTests`, `FusionMovementReplicationTests`) remain as
+regression coverage.
+
 Not validated - do not describe these as working:
 
 - [ ] Real gamepad input (Player 2).
-- [ ] Local two-player session (Player 2 requires a gamepad).
-- [ ] Root Cage restrain + Ember Moth ignition interaction in the GUI
-      (covered by automated tests only).
-- [ ] Encounter-cleared / all-players-defeated overlays and `R` restart in the GUI.
+- [ ] Same-machine local two-player session (Player 2 requires a gamepad).
 - [ ] No repeated exceptions across a long manual session.
 - [ ] Movement consistency at 30/60/144 FPS.
 - [ ] macOS or Windows standalone builds.
-- [ ] Online multiplayer (Photon Fusion is not installed).
+- [ ] Self-hosted GitHub Actions build (workflow added, never run).
 - [ ] URP visual quality / no missing shaders under scrutiny.
 
 ## Solo mode (Milestone 2 addition)
@@ -227,9 +238,9 @@ New automated tests:
 
 Actual results (all executed with the Editor closed):
 
-- `dotnet test` -> **54 passed, 0 failed** (adds `PlayerSnapshotTests`).
-- Unity EditMode -> **54 passed, 0 failed, 0 skipped**.
-- Unity PlayMode -> **10 passed, 0 failed, 0 skipped** (7 gameplay/solo + 2 connection gate + 1 combined replication test).
+- `dotnet test` -> **73 passed, 0 failed** (run loop, upgrades, pickups, snapshots).
+- Unity EditMode -> **73 passed, 0 failed, 0 skipped**.
+- Unity PlayMode -> **11 passed, 0 failed, 0 skipped** (7 gameplay/solo + 2 connection gate + 1 combined replication test).
 
 ## Connection gate (Fusion Multi-Peer)
 

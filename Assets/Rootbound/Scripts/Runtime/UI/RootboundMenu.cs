@@ -153,14 +153,14 @@ namespace Rootbound.Unity
             GUI.Box(panel, GUIContent.none);
             GUI.color = Color.white;
 
-            GUI.Label(new Rect(panel.x + 20f, panel.y + 16f, width - 40f, 34f), "Rootbound: Fractured Realms", _title);
+            GUI.Label(new Rect(panel.x + 20f, panel.y + 16f, width - 40f, 34f), "DUATBORN", _title);
 
             GUI.Label(new Rect(panel.x + 20f, panel.y + 56f, width - 40f, 22f), "Your creature (Solo / Host / Join)", _label);
             if (GUI.Button(new Rect(panel.x + 20f, panel.y + 80f, 160f, 30f),
-                    (_soloCreature == CreatureKind.RootGuardian ? "> " : "") + "Root Guardian"))
+                    (_soloCreature == CreatureKind.RootGuardian ? "> " : "") + "Dune Warden"))
                 _soloCreature = CreatureKind.RootGuardian;
             if (GUI.Button(new Rect(panel.x + 188f, panel.y + 80f, 160f, 30f),
-                    (_soloCreature == CreatureKind.EmberMoth ? "> " : "") + "Ember Moth"))
+                    (_soloCreature == CreatureKind.EmberMoth ? "> " : "") + "Sunwing"))
                 _soloCreature = CreatureKind.EmberMoth;
 
             bool busy = _session.State == NetworkSessionState.Starting;

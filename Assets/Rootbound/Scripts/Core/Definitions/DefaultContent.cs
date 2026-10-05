@@ -9,7 +9,7 @@ namespace Rootbound.Core
             CreatureSpec c = new CreatureSpec();
             c.Kind = CreatureKind.RootGuardian;
             c.Id = "root_guardian";
-            c.DisplayName = "Root Guardian";
+            c.DisplayName = "Dune Warden";
             c.MaxHealth = 160f;
             c.MoveSpeed = 4.2f;
             c.BodyRadius = 0.45f;
@@ -51,7 +51,7 @@ namespace Rootbound.Core
             CreatureSpec c = new CreatureSpec();
             c.Kind = CreatureKind.EmberMoth;
             c.Id = "ember_moth";
-            c.DisplayName = "Ember Moth";
+            c.DisplayName = "Sunwing";
             c.MaxHealth = 95f;
             c.MoveSpeed = 5.8f;
             c.BodyRadius = 0.35f;
@@ -94,9 +94,9 @@ namespace Rootbound.Core
         {
             return new[]
             {
-                MakeArena("room_1", "Rootway", false, Group(Blightling(), 6)),
-                MakeArena("room_2", "Blight Hollow", false, Group(Blightling(), 4), Group(Sporeling(), 3)),
-                MakeArena("room_3", "Heartwood", true, Group(Blightling(), 5), Group(Sporeling(), 3))
+                MakeArena("room_1", "Sun Gate", false, Group(Blightling(), 6)),
+                MakeArena("room_2", "Shadow Gate", false, Group(Blightling(), 4), Group(Sporeling(), 3)),
+                MakeArena("room_3", "Horizon Gate", true, Group(Blightling(), 5), Group(Sporeling(), 3))
             };
         }
 
@@ -109,23 +109,60 @@ namespace Rootbound.Core
         {
             UpgradeSpec vigor = new UpgradeSpec();
             vigor.Id = "up_vigor";
-            vigor.DisplayName = "Root Vigor (+30 HP)";
+            vigor.DisplayName = "Sun's Vitality (+30 HP)";
             vigor.Kind = UpgradeKind.MaxHealth;
             vigor.Amount = 30f;
 
             UpgradeSpec edge = new UpgradeSpec();
             edge.Id = "up_edge";
-            edge.DisplayName = "Sharpened Edge (+6 damage)";
+            edge.DisplayName = "Khopesh Edge (+6 damage)";
             edge.Kind = UpgradeKind.PrimaryDamage;
             edge.Amount = 6f;
 
             UpgradeSpec fleet = new UpgradeSpec();
             fleet.Id = "up_fleet";
-            fleet.DisplayName = "Fleet Step (+0.6 speed)";
+            fleet.DisplayName = "Swift Sandals (+0.6 speed)";
             fleet.Kind = UpgradeKind.MoveSpeed;
             fleet.Amount = 0.6f;
 
-            return new[] { vigor, edge, fleet };
+            UpgradeSpec overgrowth = new UpgradeSpec();
+            overgrowth.Id = "up_overgrowth";
+            overgrowth.DisplayName = "Widened Rite (+1.0 special radius)";
+            overgrowth.Kind = UpgradeKind.SpecialRadius;
+            overgrowth.Amount = 1.0f;
+
+            UpgradeSpec lingering = new UpgradeSpec();
+            lingering.Id = "up_lingering";
+            lingering.DisplayName = "Enduring Seal (+1.5 seal duration)";
+            lingering.Kind = UpgradeKind.SpecialDuration;
+            lingering.Amount = 1.5f;
+
+            UpgradeSpec siphoning = new UpgradeSpec();
+            siphoning.Id = "up_siphoning";
+            siphoning.DisplayName = "Funerary Offering (heal 6 on kill)";
+            siphoning.Kind = UpgradeKind.LifeOnKill;
+            siphoning.Amount = 6f;
+
+            return new[] { vigor, edge, fleet, overgrowth, lingering, siphoning };
+        }
+
+        public static int[] PickUpgradeIndices(int count, CreatureKind[] creatures, System.Random random)
+        {
+            UpgradeSpec[] catalog = UpgradeCatalog();
+            System.Collections.Generic.List<int> pool = new System.Collections.Generic.List<int>();
+            for (int i = 0; i < catalog.Length; i++)
+                if (UpgradeRules.AppliesToAny(catalog[i], creatures)) pool.Add(i);
+            if (count > pool.Count) count = pool.Count;
+            if (count < 0) count = 0;
+
+            int[] result = new int[count];
+            for (int i = 0; i < count; i++)
+            {
+                int pick = random.Next(pool.Count);
+                result[i] = pool[pick];
+                pool.RemoveAt(pick);
+            }
+            return result;
         }
 
         private static ArenaEnemyGroup Group(EnemySpec enemy, int count)
@@ -154,7 +191,7 @@ namespace Rootbound.Core
         {
             EnemySpec e = new EnemySpec();
             e.Id = "sporeling";
-            e.DisplayName = "Sporeling";
+            e.DisplayName = "Fractured Vessel";
             e.MaxHealth = 22f;
             e.MoveSpeed = 4.2f;
             e.BodyRadius = 0.3f;
@@ -174,7 +211,7 @@ namespace Rootbound.Core
         {
             EnemySpec e = new EnemySpec();
             e.Id = "blightling";
-            e.DisplayName = "Blightling";
+            e.DisplayName = "Hollow Sentinel";
             e.MaxHealth = 40f;
             e.MoveSpeed = 2.6f;
             e.BodyRadius = 0.4f;
