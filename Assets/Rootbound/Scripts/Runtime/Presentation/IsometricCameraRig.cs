@@ -11,6 +11,9 @@ namespace Rootbound.Unity
         public float distance = 24f;
         public float orthographicSize = 11f;
         public float followLerp = 8f;
+        public int localPlayerId = -1;
+
+        public Vector3 FocusCenter { get; private set; }
 
         private CombatSimulation _sim;
         private Vector3 _currentCenter;
@@ -26,6 +29,13 @@ namespace Rootbound.Unity
             Apply(1f);
         }
 
+        public void SetLocalPlayer(int playerId)
+        {
+            localPlayerId = playerId;
+            if (_sim == null) return;
+            Apply(1f);
+        }
+
         private void LateUpdate()
         {
             if (_sim == null) return;
@@ -36,6 +46,7 @@ namespace Rootbound.Unity
         {
             Vector3 center = ComputeCenter();
             _currentCenter = Vector3.Lerp(_currentCenter, center, t);
+            FocusCenter = _currentCenter;
 
             Quaternion rotation = Quaternion.Euler(pitch, yaw, 0f);
             Vector3 position = _currentCenter - (rotation * Vector3.forward) * distance;
@@ -53,6 +64,13 @@ namespace Rootbound.Unity
         private Vector3 ComputeCenter()
         {
             if (_sim == null) return Vector3.zero;
+
+            if (localPlayerId >= 0)
+            {
+                PlayerState local = _sim.GetPlayer(localPlayerId);
+                if (local != null) return ArenaSpace.ToWorld(local.Position);
+            }
+
             Vector3 sum = Vector3.zero;
             int count = 0;
             for (int i = 0; i < _sim.Players.Count; i++)

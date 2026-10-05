@@ -8,6 +8,7 @@ namespace Rootbound.Unity
         public bool IsHost { get; private set; }
         public string SessionCode { get; private set; }
         public string LastError { get; private set; }
+        public Rootbound.Core.CreatureKind LocalCreature { get; set; } = Rootbound.Core.CreatureKind.RootGuardian;
 
         public event Action Changed;
 

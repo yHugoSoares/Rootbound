@@ -19,6 +19,7 @@ namespace Rootbound.Unity
         bool IsHost { get; }
         string SessionCode { get; }
         string LastError { get; }
+        Rootbound.Core.CreatureKind LocalCreature { get; set; }
         event Action Changed;
 
         void StartHost();

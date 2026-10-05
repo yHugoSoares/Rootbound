@@ -13,6 +13,8 @@ namespace Rootbound.Unity
         public int enemyCount = 6;
         public float arenaRadius = 18f;
         public int playerCount = 2;
+        public CreatureKind selectedCreature = CreatureKind.RootGuardian;
+        public bool pauseAllowed;
         public Camera arenaCamera;
         public CombatView view;
         public CombatHud hud;
@@ -20,6 +22,7 @@ namespace Rootbound.Unity
 
         public CombatSimulation Simulation { get; private set; }
         public bool IsRunning { get; private set; }
+        public bool IsPaused { get; private set; }
 
         private readonly List<RootboundInputActions> _actions = new List<RootboundInputActions>();
         private readonly List<PlayerInputAdapter> _adapters = new List<PlayerInputAdapter>();
@@ -50,9 +53,20 @@ namespace Rootbound.Unity
             Simulation = new CombatSimulation(BuildSetup());
             if (view != null) view.Bind(Simulation);
             if (hud != null) hud.Bind(Simulation);
-            if (cameraRig != null) cameraRig.Bind(Simulation);
+            if (cameraRig != null)
+            {
+                cameraRig.Bind(Simulation);
+                cameraRig.SetLocalPlayer(playerCount <= 1 ? 0 : -1);
+            }
             _accumulator = 0f;
+            IsPaused = false;
             IsRunning = true;
+        }
+
+        public void SetPaused(bool paused)
+        {
+            if (!pauseAllowed) return;
+            IsPaused = paused;
         }
 
         public void Restart()
@@ -71,15 +85,30 @@ namespace Rootbound.Unity
             _actions.Clear();
             _adapters.Clear();
             IsRunning = false;
+            IsPaused = false;
             Simulation = null;
+        }
+
+        private CreatureSpec SoloSpec()
+        {
+            if (selectedCreature == CreatureKind.EmberMoth)
+                return player1Definition != null ? player1Definition.spec : DefaultContent.EmberMoth();
+            return player0Definition != null ? player0Definition.spec : DefaultContent.RootGuardian();
         }
 
         private CombatSetup BuildSetup()
         {
-            CreatureSpec[] specs = new CreatureSpec[playerCount];
-            specs[0] = player0Definition != null ? player0Definition.spec : DefaultContent.RootGuardian();
-            if (playerCount > 1)
+            int count = Mathf.Max(1, playerCount);
+            CreatureSpec[] specs = new CreatureSpec[count];
+            if (count == 1)
+            {
+                specs[0] = SoloSpec();
+            }
+            else
+            {
+                specs[0] = player0Definition != null ? player0Definition.spec : DefaultContent.RootGuardian();
                 specs[1] = player1Definition != null ? player1Definition.spec : DefaultContent.EmberMoth();
+            }
 
             CombatSetup setup = new CombatSetup();
             setup.PlayerSpecs = specs;
@@ -92,6 +121,17 @@ namespace Rootbound.Unity
         private void Update()
         {
             if (!IsRunning || Simulation == null) return;
+
+            if (pauseAllowed && Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+                IsPaused = !IsPaused;
+
+            if (hud != null) hud.Paused = IsPaused;
+
+            if (IsPaused)
+            {
+                if (view != null) view.Render(Simulation, Time.deltaTime);
+                return;
+            }
 
             for (int i = 0; i < _adapters.Count; i++)
                 _adapters[i].CaptureFrame(_actions[i].Dodge.WasPressedThisFrame());

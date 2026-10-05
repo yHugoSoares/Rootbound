@@ -7,6 +7,10 @@ namespace Rootbound.Unity
     public sealed class CombatHud : MonoBehaviour
     {
         public bool showDiagnostics = false;
+        public bool Paused;
+        public bool WaitingForStart;
+        public string WaitingLabel = string.Empty;
+        public int LocalPlayerId = -1;
 
         private CombatSimulation _sim;
         private GUIStyle _style;
@@ -41,10 +45,31 @@ namespace Rootbound.Unity
             DrawEncounter();
             DrawDiagnostics();
 
-            if (_sim.EncounterCleared || _sim.AllPlayersDefeated)
+            if (Paused)
+                GUI.Label(new Rect(Screen.width * 0.5f - 60f, 16f, 120f, 24f), "PAUSED", _style);
+
+            if (WaitingForStart && !string.IsNullOrEmpty(WaitingLabel))
             {
-                string title = _sim.EncounterCleared ? "Region Reclaimed" : "All Creatures Down";
-                string subtitle = _sim.EncounterCleared ? "Press R to run it back" : "Press R to restart";
+                Rect box = new Rect(Screen.width * 0.5f - 200f, 70f, 400f, 44f);
+                GUI.color = new Color(0f, 0f, 0f, 0.7f);
+                GUI.Box(box, GUIContent.none);
+                GUI.color = Color.white;
+                GUI.Label(new Rect(box.x + 16f, box.y + 12f, box.width, 22f), WaitingLabel, _style);
+            }
+
+            bool allDown = _sim.AllPlayersDefeated;
+            bool cleared = _sim.EncounterCleared;
+            bool localAlive = true;
+            if (LocalPlayerId >= 0)
+            {
+                PlayerState local = _sim.GetPlayer(LocalPlayerId);
+                localAlive = local != null && !local.IsDefeated;
+            }
+
+            if (allDown || (cleared && localAlive))
+            {
+                string title = cleared ? "Region Reclaimed" : "All Creatures Down";
+                string subtitle = cleared ? "Press R to run it back" : "Press R to restart";
                 Rect box = new Rect(Screen.width * 0.5f - 190f, 70f, 380f, 64f);
                 GUI.color = new Color(0f, 0f, 0f, 0.7f);
                 GUI.Box(box, GUIContent.none);
