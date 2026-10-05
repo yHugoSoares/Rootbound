@@ -1,5 +1,7 @@
 # Rootbound: Fractured Realms
 
+![Rootbound logo](docs/assets/RootboundLogo.jpg)
+
 An original cooperative action roguelite prototype (working title). Strange
 creatures enter a fractured world-tree and combine abilities to reclaim
 corrupted regions. Isometric action combat, solo or 2-4 players, PC-first.

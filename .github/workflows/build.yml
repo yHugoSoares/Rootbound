@@ -9,7 +9,6 @@ on:
 jobs:
   build:
     name: Build ${{ matrix.targetPlatform }}
-    if: ${{ secrets.UNITY_LICENSE != '' || (secrets.UNITY_EMAIL != '' && secrets.UNITY_PASSWORD != '') }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -23,7 +22,24 @@ jobs:
         with:
           lfs: true
 
+      # The `secrets` context is not allowed in a job-level `if`, so the license
+      # presence is checked in a step and exposed as an output.
+      - name: Check Unity license
+        id: license
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        run: |
+          if [ -n "$UNITY_LICENSE" ] || { [ -n "$UNITY_EMAIL" ] && [ -n "$UNITY_PASSWORD" ]; }; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::No Unity license secrets configured; skipping build. See docs/HANDOFF.md (CI)."
+          fi
+
       - name: Cache Library
+        if: steps.license.outputs.configured == 'true'
         uses: actions/cache@v4
         with:
           path: Library
@@ -33,6 +49,7 @@ jobs:
             Library-
 
       - name: Build
+        if: steps.license.outputs.configured == 'true'
         uses: game-ci/unity-builder@v4
         env:
           # Required for a private repository. Set ONE of:
@@ -54,6 +71,7 @@ jobs:
           allowDirtyBuild: true
 
       - name: Upload artifact
+        if: steps.license.outputs.configured == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: Rootbound-${{ matrix.targetPlatform }}
@@ -62,7 +80,7 @@ jobs:
 
   release:
     name: Publish release
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: ${{ startsWith(github.ref, 'refs/tags/v') && needs.build.result == 'success' }}
     needs: build
     runs-on: ubuntu-latest
     permissions:
