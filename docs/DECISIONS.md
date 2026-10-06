@@ -1,6 +1,6 @@
 # Decisions and tradeoffs
 
-> Branding note: this game is **Duatborn**; historical titles "Rootbound: Fractured Realms" and "Dawnkeepers: Gates of Duat" are superseded. Internal identifiers, namespaces, assemblies, and `Assets/Rootbound` keep the old name (`docs/CREATIVE_DIRECTION.md`).
+> Branding note: this game is **Duatborn**; historical titles "Rootbound: Fractured Realms" and "Dawnkeepers: Gates of Duat" are superseded. Namespaces, assemblies, and the `Assets/Duatborn` path use the Duatborn name; the migration is recorded in `docs/RENAME_PLAN.md`.
 
 ## D1 - Unity 6.0 LTS `6000.0.84f1`, not the newest LTS
 
@@ -12,7 +12,7 @@ must be intentional, not silent.
 
 ## D2 - Pure gameplay core with no engine references
 
-`Rootbound.Core` compiles without `UnityEngine`. Tradeoff: conversions at the
+`Duatborn.Core` compiles without `UnityEngine`. Tradeoff: conversions at the
 boundary (`Vec2` <-> `Vector3`, specs <-> ScriptableObjects) and a small
 hand-rolled `Vec2`. Benefit: the authoritative rules are unit-testable without
 the editor, which is the only executable validation available in this
@@ -33,7 +33,7 @@ required for Fusion.
 Benefit: frame-rate-independent movement and cooldowns rather than
 `Update`-scaled logic.
 
-## D5 - Root Cage ignition is capped by total burn time
+## D5 - Binding Seal ignition (Solar Consecration) is capped by total burn time
 
 `TryIgnite` clamps `IgnitedTimeRemaining` to `MaxIgnitionDuration`. Re-triggering
 at the cap is a no-op (returns false), which prevents accidental damage stacking.
@@ -55,7 +55,7 @@ Tradeoff: no online play this milestone. This is the single largest gap.
 
 ## D7 - IMGUI placeholder HUD
 
-`CombatHud` and `RootboundMenu` use `OnGUI` instead of UGUI/TextMeshPro. Tradeoff:
+`CombatHud` and `DuatbornMenu` use `OnGUI` instead of UGUI/TextMeshPro. Tradeoff:
 not production UI. Benefit: no canvas/font/TMP asset dependencies, so the code
 is reproducible and compiles without authored UI assets. Replace with uGUI/TMP
 in the next milestone.
@@ -69,7 +69,7 @@ avoids hand-authored prefab/scene YAML that cannot be validated without Unity.
 
 ## D9 - Reproducible content via an editor generator
 
-`Rootbound > Build Milestone 1 Content` and `Create Arena Scene` generate assets
+`Duatborn > Build Milestone 1 Content` and `Create Arena Scene` generate assets
 and the scene from code rather than committing unverifiable YAML. Tradeoff: one
 extra manual step; URP asset assignment remains manual because creating a URP
 pipeline asset relies on editor APIs that could not be verified here. Benefit:

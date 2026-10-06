@@ -8,8 +8,7 @@ hardware. Platform policy is in `docs/ENVIRONMENT.md`.
 > Naming: the game is branded **Duatborn** (no subtitle). Historical titles
 > "Rootbound: Fractured Realms" and "Dawnkeepers: Gates of Duat" are superseded.
 > Internal identifiers, namespaces, assemblies, build method names, and the
-> `Assets/Rootbound` path keep the "Rootbound" name; see
-> `docs/CREATIVE_DIRECTION.md`.
+> `Assets/Duatborn` path now use the Duatborn name; see `docs/RENAME_PLAN.md`.
 
 ## Current status (Milestone 3 complete)
 
@@ -23,7 +22,7 @@ hardware. Platform policy is in `docs/ENVIRONMENT.md`.
   leave/shutdown, fresh host/join, failed join, solo fallback) and one combined
   **combat replication** test (movement, attack, health, enemies, cage,
   ignition), over Photon Cloud Host Mode via Fusion Multi-Peer.
-- Offline: solo (Root Guardian/Ember Moth) and local two-player co-op remain.
+- Offline: solo (Dune Warden/Sunwing) and local two-player co-op remain.
 - Photon Fusion 2.1.3 imported; **App ID is set locally** (git-ignored; not
   printed). Host/join connects.
 - MPPM 1.6.3 installed; the Fusion installer patch lets virtual players start
@@ -62,7 +61,7 @@ combat is only automated-proven (one-process Multi-Peer), not manually re-run.
 
 **Builds exist.** `6000.0.84f1` now has **MacStandaloneSupport** installed.
 Local headless builds were produced with
-`Rootbound.EditorTools.RootboundBuild.PerformBuild`
+`Duatborn.EditorTools.DuatbornBuild.PerformBuild`
 (`DUATBORN_BUILD_TARGET=StandaloneOSX` / `StandaloneWindows64`) and published as
 `v0.1.0`:
 
@@ -86,7 +85,7 @@ internet. Exact steps (do not upgrade Unity):
 
 The App ID is compiled in from the git-ignored `PhotonAppSettings.asset`
 (client-side); do not print it. Ensure
-`Assets/Rootbound/Prefabs/FusionMatch.prefab` is included (it is referenced by
+`Assets/Duatborn/Prefabs/FusionMatch.prefab` is included (it is referenced by
 `Runner.Spawn("FusionMatch", ...)`).
 
 The `6000.6.4f1` editor also has `MacStandaloneSupport`; the project stays on the
@@ -123,7 +122,7 @@ Two workflows build **StandaloneOSX** and **StandaloneWindows64**:
 Enable **one** path (or expect two competing release jobs on a tag). Both cancel
 superseded runs via `concurrency` and refuse to publish an empty release.
 
-The build method is `Rootbound.EditorTools.RootboundBuild.PerformBuild`. It reads
+The build method is `Duatborn.EditorTools.DuatbornBuild.PerformBuild`. It reads
 the target from `-duatbornTarget` (fallback `DUATBORN_BUILD_TARGET`) and the
 Fusion App ID from `-photonAppId` (fallback `PHOTON_APP_ID`). game-ci does **not**
 forward workflow `env` into the build container, so the hosted workflow passes
@@ -169,7 +168,7 @@ method itself is used by the proven local build command.
   (advance on clear, victory/defeat/R to replay), and one additional enemy type
   (the Fractured Vessel, internal `Sporeling`) in mixed groups.
   Player-facing names: `docs/CREATIVE_DIRECTION.md`.
-- Sporeling death burst has a world-space **expanding ring** sized to
+- Fractured Vessel death burst has a world-space **expanding ring** sized to
   `EnemySpec.DeathBurstRadius` (derived on every peer from the defeated state, so
   no extra sync).
 - Upgrade pool expanded to six, mixing flat stats (HP/damage/speed) with
@@ -203,7 +202,7 @@ method itself is used by the proven local build command.
   `UnityEditor.ScriptableSingleton<T>:.ctor` ->
   `UnityEditor.PackageManager.UI.Internal.ServicesContainer:.ctor` and
   `...PackageManagerProjectSettings:.ctor`. It recurs once per domain reload, is
-  **not caused by Rootbound or Fusion**, is benign, and has no project-side fix.
+  **not caused by Duatborn or Fusion**, is benign, and has no project-side fix.
   No assets were deleted.
 - **Repository handling:** `Assets/Photon` is untracked (imported after the last
   commit). `PhotonAppSettings.asset` is now git-ignored (with its `.meta`) so a
@@ -213,7 +212,7 @@ method itself is used by the proven local build command.
 
 ## Solo mode and menu (Milestone 2 addition)
 
-- Menu now separates **Play Solo** (with Root Guardian / Ember Moth selection),
+- Menu now separates **Play Solo** (with Dune Warden / Sunwing selection),
   **Host Co-op**, **Join Co-op**, and **Local Co-op (2 players)**. A two-player
   arena is never labelled singleplayer.
 - **Solo uses the existing offline runner** (`LocalGameRunner` +
@@ -232,12 +231,12 @@ method itself is used by the proven local build command.
 ## Milestone 2 increment 1: ownership + movement (implemented, automated)
 
 - `FusionCombatHost` (`NetworkBehaviour`): host owns the single `CombatSimulation`,
-  maps `PlayerRef -> index` by join order, reads each client's `RootboundInput`,
+  maps `PlayerRef -> index` by join order, reads each client's `DuatbornInput`,
   steps, and replicates player position/facing via `[Networked]` vectors; clients
   apply to a mirror and focus their camera on their own player.
-- Match prefab `Assets/Rootbound/Prefabs/FusionMatch.prefab` (`NetworkObject` +
+- Match prefab `Assets/Duatborn/Prefabs/FusionMatch.prefab` (`NetworkObject` +
   `FusionCombatHost`), labeled `FusionPrefab` so Fusion registers it (editor menu
-  `Rootbound > Build Fusion Match Prefab`).
+  `Duatborn > Build Fusion Match Prefab`).
 - `FusionNetworkSession` spawns the match on the host and provides local input.
 - Menu: online modes no longer run `LocalGameRunner`; the Fusion host binds
   presentation.
@@ -247,7 +246,7 @@ method itself is used by the proven local build command.
   (`[Networked]` arrays applied on clients in `Render`).
 - Increment 3 covers primary attacks: the host resolves ability damage once and
   replicates the result.
-- Increment 4 covers the Root Cage and Ember Moth ignition replication.
+- Increment 4 covers the Binding Seal and Solar Consecration replication.
 - Online polish: a **lobby with no enemies** that the host starts with **R**
   (replicated `EncounterStarted`), and **online dodge input** (latched in
   `FusionNetworkSession.Update`, since online never runs `LocalGameRunner`).
@@ -265,14 +264,14 @@ method itself is used by the proven local build command.
   session reused a runner. Fixed by moving session actions to `Update`
   (single call via a request flag), adding a `_busy`/`CanStart` guard, and
   disposing the runner on `Leave`/failure (`FusionNetworkSession.EnsureRunner`).
-- **`RootboundInput has no attribute Fusion.NetworkInputWeavedAttribute`**:
+- **`DuatbornInput has no attribute Fusion.NetworkInputWeavedAttribute`**:
   Fusion's IL weaver only processes assemblies listed in
   `Assets/Photon/Fusion/Resources/NetworkProjectConfig.fusion` ->
   `AssembliesToWeave` (defaults to `Assembly-CSharp`, `Assembly-CSharp-firstpass`).
-  Added **`Rootbound.Fusion`**. Verified the rebuilt
-  `Library/ScriptAssemblies/Rootbound.Fusion.dll` now contains
+  Added **`Duatborn.Fusion`**. Verified the rebuilt
+  `Library/ScriptAssemblies/Duatborn.Fusion.dll` now contains
   `NetworkInputWeavedAttribute`/`NetworkAssemblyWeavedAttribute`.
-- The new `Rootbound.Fusion` assembly compiles (no `error CS`); the offline arena
+- The new `Duatborn.Fusion` assembly compiles (no `error CS`); the offline arena
   assemblies remain Fusion-free via `NetworkSessionFactory`.
 
 ## Exact engine and packages (resolved on this machine)
@@ -296,33 +295,33 @@ Run from the project root with the pinned editor:
 ```
 "/Applications/Unity/Hub/Editor/6000.0.84f1/Unity.app/Contents/MacOS/Unity" \
   -batchmode -nographics -quit -projectPath "$(pwd)" \
-  -executeMethod Rootbound.EditorTools.RootboundSceneBuilder.SetupAndCreateArenaScene
+  -executeMethod Duatborn.EditorTools.DuatbornSceneBuilder.SetupAndCreateArenaScene
 ```
 
 That command:
 1. Creates and assigns the URP asset
-   (`Assets/Rootbound/Settings/RootboundUrpAsset.asset` +
-   `RootboundUniversalRenderer.asset`) in Graphics and Quality settings.
+   (`Assets/Duatborn/Settings/DuatbornUrpAsset.asset` +
+   `DuatbornUniversalRenderer.asset`) in Graphics and Quality settings.
 2. Sets Active Input Handling to Both.
-3. Writes the definition assets (`Assets/Rootbound/Data/*.asset`).
-4. Creates `Assets/Rootbound/Scenes/CombatArena.unity` and adds it to Build Settings.
+3. Writes the definition assets (`Assets/Duatborn/Data/*.asset`).
+4. Creates `Assets/Duatborn/Scenes/CombatArena.unity` and adds it to Build Settings.
 
 The same steps are available in the menu as
-`Rootbound > Setup Project and Create Arena Scene`, or as separate
-`Rootbound > Configure URP and Input`, `Build Milestone 1 Content`,
+`Duatborn > Setup Project and Create Arena Scene`, or as separate
+`Duatborn > Configure URP and Input`, `Build Milestone 1 Content`,
 `Create Arena Scene`. All are idempotent: existing assets are reused, not
 overwritten.
 
 ## Errors found and fixed during import
 
-1. `RootboundMenu.cs`: `Repaint()` does not exist on `MonoBehaviour`. Removed the
+1. `DuatbornMenu.cs`: `Repaint()` does not exist on `MonoBehaviour`. Removed the
    unused `INetworkSession.Changed` handler; the IMGUI menu redraws each frame.
-2. `RootboundInputActions.cs`: `InputActionMap.AddAction` has no parameter named
+2. `DuatbornInputActions.cs`: `InputActionMap.AddAction` has no parameter named
    `expectedControlType`. The correct name in Input System 1.11.2 is
    `expectedControlLayout`; both actions updated.
-3. `Rootbound.Editor.asmdef`: the configurator needs URP types. Added
+3. `Duatborn.Editor.asmdef`: the configurator needs URP types. Added
    `Unity.RenderPipelines.Core.Runtime` and `Unity.RenderPipelines.Universal.Runtime`
-   references (and `RootboundProjectConfigurator.cs` for URP/input automation).
+   references (and `DuatbornProjectConfigurator.cs` for URP/input automation).
 
 No gameplay logic was changed during import.
 
@@ -410,7 +409,7 @@ Confirmed by the developer in the Unity Editor on this Mac:
 - F1 diagnostics toggle.
 - Repeated enemy damage over time and live HUD updates.
 
-Explicitly **not** validated: gamepad input, local two-player, Root Cage ignition
+Explicitly **not** validated: gamepad input, local two-player, Binding Seal
 in the GUI, encounter/defeat overlays and `R` restart in the GUI, long-session
 exception soak, frame-rate sweep, standalone builds, and online play.
 
@@ -426,7 +425,7 @@ exception soak, frame-rate sweep, standalone builds, and online play.
 | Combat replication | `FusionMovementReplicationTests` | movement, attack damage, player/enemy health, cage and ignition reach the client mirror |
 
 The PlayMode tests load the generated scene and assert scene wiring, creature
-spawning from ScriptableObjects, simulation stepping, Blightling movement/damage,
+spawning from ScriptableObjects, simulation stepping, Hollow Sentinel movement/damage,
 no exceptions, cooldown recovery through `LocalGameRunner` with no input, and
 that a discrete dodge press is latched across a frame with no fixed step. They
 run with `-nographics`; this is **not** a visual or GUI check. Full detail in
@@ -438,7 +437,7 @@ instance.
 
 ## Controls and two-player assignment (verified by code inspection)
 
-`RootboundMenu.StartLocal()` starts `LocalGameRunner.BeginSession()` with
+`DuatbornMenu.StartLocal()` starts `LocalGameRunner.BeginSession()` with
 `playerCount = 2`. `BeginSession` builds one input map per player index:
 
 - **Player 1 (index 0) - keyboard/mouse:**
@@ -463,7 +462,7 @@ Local two-player simulation is distinct from online multiplayer. Photon Fusion
 ## Still unverified (requires hardware, builds, or Fusion)
 
 - Real gamepad input (Player 2); local two-player session.
-- Root Cage restrain + Ember Moth ignition in the GUI (automated tests only).
+- Binding Seal restrain + Solar Consecration in the GUI (automated tests only).
 - Encounter-cleared / all-players-defeated overlays and `R` restart in the GUI.
 - Long-session exception soak; frame-rate consistency at 30/60/144 FPS.
 - URP visual quality under scrutiny.

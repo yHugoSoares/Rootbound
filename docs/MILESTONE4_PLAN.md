@@ -1,6 +1,6 @@
 # Milestone 4 plan (proposal - not implemented)
 
-> Branding note: this game is **Duatborn**; historical titles "Rootbound: Fractured Realms" and "Dawnkeepers: Gates of Duat" are superseded. Internal identifiers, namespaces, assemblies, and `Assets/Rootbound` keep the old name (`docs/CREATIVE_DIRECTION.md`).
+> Branding note: this game is **Duatborn**; historical titles "Rootbound: Fractured Realms" and "Dawnkeepers: Gates of Duat" are superseded. Namespaces, assemblies, and the `Assets/Duatborn` path use the Duatborn name; the migration is recorded in `docs/RENAME_PLAN.md`.
 
 > Status: **proposal.** The direction and the open decisions below must be agreed
 > before substantial code. This document does not claim anything is implemented.

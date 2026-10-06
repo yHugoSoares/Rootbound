@@ -1,0 +1,23 @@
+{
+    "name": "Duatborn.Tests.PlayMode",
+    "rootNamespace": "Duatborn.Tests",
+    "references": [
+        "Duatborn.Core",
+        "Duatborn.Unity",
+        "Duatborn.Fusion",
+        "Unity.InputSystem",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

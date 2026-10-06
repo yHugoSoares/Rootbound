@@ -8,13 +8,13 @@ to reopen the sun's route and restore dawn. Isometric action combat, solo or
 2-4 players, PC-first.
 
 Historical working titles: "Rootbound: Fractured Realms", then "Dawnkeepers:
-Gates of Duat". The repository, project folder, namespaces, and internal type
-names retain the "Rootbound" name; only player-facing branding uses Duatborn.
-See `docs/CREATIVE_DIRECTION.md`.
+Gates of Duat". The repository, project folder, namespaces, assemblies, and
+internal type names now use the Duatborn name. See `docs/CREATIVE_DIRECTION.md`
+and the migration record in `docs/RENAME_PLAN.md`.
 
 This repository currently contains **Milestone 3**: a host-authoritative
 three-room run loop (Rootway → Blight Hollow → Heartwood finale) with between-room
-upgrade pickups, a second enemy type (the Sporeling), and both offline (solo /
+upgrade pickups, a second enemy type (the Fractured Vessel), and both offline (solo /
 local co-op) and Photon Fusion online host/join play.
 
 > Status: the project **compiles in Unity `6000.0.84f1` (arm64)** and the arena
@@ -48,21 +48,21 @@ See `docs/ENVIRONMENT.md`.
 
 From the Unity menu bar run:
 
-`Rootbound > Setup Project and Create Arena Scene`
+`Duatborn > Setup Project and Create Arena Scene`
 
 This is idempotent and does all of the following:
 
-- Creates and assigns the URP asset under `Assets/Rootbound/Settings/`
+- Creates and assigns the URP asset under `Assets/Duatborn/Settings/`
   (Graphics + Quality settings) and sets Active Input Handling to **Both**.
-- Writes the definition assets (`Assets/Rootbound/Data/*.asset`).
-- Creates `Assets/Rootbound/Scenes/CombatArena.unity` and adds it to Build Settings.
+- Writes the definition assets (`Assets/Duatborn/Data/*.asset`).
+- Creates `Assets/Duatborn/Scenes/CombatArena.unity` and adds it to Build Settings.
 
 The individual menu items (`Configure URP and Input`, `Build Milestone 1 Content`,
 `Create Arena Scene`) also exist. Re-running never overwrites authored values.
 
 ## Play the arena
 
-1. Open `Assets/Rootbound/Scenes/CombatArena.unity`.
+1. Open `Assets/Duatborn/Scenes/CombatArena.unity`.
 2. Press **Play**.
 3. Pick a mode from the menu: **Play Solo**, **Host Co-op**, **Join Co-op**, or
    **Local Co-op**. Offline modes report `Session: Hosting LOCAL (offline/local)`.
@@ -122,7 +122,7 @@ registered.
 ## Repository layout
 
 ```
-Assets/Rootbound/
+Assets/Duatborn/
   Scripts/Core/         Pure C# gameplay domain (no UnityEngine)
   Scripts/Runtime/      Unity adapters: input, runner, presentation, UI, networking
   Scripts/Editor/       Reproducible URP/input/content/scene generator
@@ -135,7 +135,8 @@ Packages/               Unity package manifest and lock
 ProjectSettings/        Pinned editor version
 Tools/CoreTests/        dotnet test project for the pure core
 docs/                   ARCHITECTURE, CREATIVE_DIRECTION, DECISIONS, TESTING,
-                        HANDOFF, PLAN, MILESTONE3_PLAN, MILESTONE4_PLAN
+                        HANDOFF, PLAN, MILESTONE3_PLAN, MILESTONE4_PLAN,
+                        RENAME_PLAN
 ```
 
 ## Non-goals for this milestone

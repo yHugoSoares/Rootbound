@@ -619,14 +619,14 @@ PlayerSettings:
   editorAssembliesCompatibilityLevel: 1
   m_RenderingPath: 1
   m_MobileRenderingPath: 1
-  metroPackageName: Rootbound
+  metroPackageName: Duatborn
   metroPackageVersion: 
   metroCertificatePath: 
   metroCertificatePassword: 
   metroCertificateSubject: 
   metroCertificateIssuer: 
   metroCertificateNotAfter: 0000000000000000
-  metroApplicationDescription: Rootbound
+  metroApplicationDescription: Duatborn
   wsaImages: {}
   metroTileShortName: 
   metroTileShowName: 0

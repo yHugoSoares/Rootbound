@@ -1,6 +1,6 @@
 # Testing
 
-> Branding note: this game is **Duatborn**; historical titles "Rootbound: Fractured Realms" and "Dawnkeepers: Gates of Duat" are superseded. Internal identifiers, namespaces, assemblies, and `Assets/Rootbound` keep the old name (`docs/CREATIVE_DIRECTION.md`).
+> Branding note: this game is **Duatborn**; historical titles "Rootbound: Fractured Realms" and "Dawnkeepers: Gates of Duat" are superseded. Namespaces, assemblies, and the `Assets/Duatborn` path use the Duatborn name; the migration is recorded in `docs/RENAME_PLAN.md`.
 
 ## Environment used for these runs
 
@@ -47,8 +47,8 @@ Result: **total=11, passed=11, failed=0, skipped=0.**
 Arena / runner (`ArenaPlayModeTests`), 7:
 
 - `ArenaSceneRunsLocalSession` - loads the generated scene and asserts wiring,
-  creature spawning from ScriptableObjects, simulation stepping, Blightling
-  movement, Blightling damage to a player, and no exceptions.
+  creature spawning from ScriptableObjects, simulation stepping, Hollow Sentinel
+  movement, Hollow Sentinel damage to a player, and no exceptions.
 - `RunnerAdvancesCooldownsWithoutInput` - starts a session through the real
   `LocalGameRunner`, forces the player's primary/special/dodge cooldowns to
   non-zero, waits 1 second with no input, and asserts all three recover and
@@ -152,8 +152,8 @@ rejected `TryStart` does not change the value, normalized clamp) and
 | Enemy damages same target across cycles | `EnemyDamagesSameTargetOnMultipleAttackCycles` | pass |
 | State persists across ticks | `StatePersistsAcrossSuccessiveTicks` | pass |
 | Invalid / friendly targets rejected | `TargetRulesTests.*`, `IgnitionBurstDoesNotDamageAllies` | pass |
-| Root Cage ignition stacking and duration | `RootCageTests.*`, `IgnitionBurstIgnitesCageAndFireDealsDamage` | pass |
-| Cage restrains enemies | `RootCageRestrainsEnemy` | pass |
+| Binding Seal ignition (Solar Consecration) stacking and duration | `BindingSealTests.*`, `IgnitionBurstIgnitesCageAndFireDealsDamage` | pass |
+| Binding Seal restrains enemies | `RootCageRestrainsEnemy` | pass |
 | Encounter completion / restart | `EncounterClearedAfterAllEnemiesDefeated`, `RestartRestoresInitialState` | pass |
 | Defeated players ignore commands | `DefeatedPlayerCommandsAreIgnored` | pass |
 | Runner-path cooldown recovery | `RunnerAdvancesCooldownsWithoutInput` (PlayMode) | pass |
@@ -213,8 +213,8 @@ Confirmed:
 
 The developer manually validated multiplayer in a two-peer session and reports it
 working as expected: host/join by code, per-player ownership, client movement,
-attack, special, dodge, damage resolved once, Root Cage placement and Ember Moth
-ignition, consistent health/encounter outcome, ground-pickup upgrade collection,
+attack, special, dodge, damage resolved once, Binding Seal placement and Solar
+Consecration, consistent health/encounter outcome, ground-pickup upgrade collection,
 and returning to the menu. Recorded as confirmed on the developer's report. No
 specific machine, build, or network conditions were captured, and no latency or
 packet-loss measurement was taken. The automated Multi-Peer tests
@@ -236,7 +236,7 @@ Not validated - do not describe these as working:
 
 Genuine offline singleplayer uses the existing offline runner
 (`LocalGameRunner` + `OfflineNetworkSession`) with **one** player spec — no Fusion
-runner, no Photon connection, no App ID required. Same `Rootbound.Core` combat
+runner, no Photon connection, no App ID required. Same `Duatborn.Core` combat
 rules as co-op; no separate rule set. Player-hosted co-op (Fusion Host Mode) is
 unchanged and extended, not replaced.
 
@@ -287,16 +287,16 @@ expects that error log. This is not a substitute for two-machine testing.
 
 Host-authoritative: the host owns the single `CombatSimulation` and steps it in
 `FixedUpdateNetwork`; it maps `PlayerRef -> player index` by join order and reads
-each client's `RootboundInput`. Movement/facing are replicated as `[Networked]`
+each client's `DuatbornInput`. Movement/facing are replicated as `[Networked]`
 vectors; clients apply them to a local mirror and focus their camera on their own
-player. No prediction. Match object: `Assets/Rootbound/Prefabs/FusionMatch.prefab`
+player. No prediction. Match object: `Assets/Duatborn/Prefabs/FusionMatch.prefab`
 (`NetworkObject` + `FusionCombatHost`, labeled `FusionPrefab`).
 
 Test `FusionMovementReplicationTests.AllCombatStateReplicatesToClient` (**pass**,
 `/tmp/rb28-play.xml`) uses a **single** host/client connection and checks, in
 order: host movement reaches the client proxy; a host primary attack damages an
 adjacent enemy once and the health replicates; player health replicates; a host
-Root Cage replicates (position); the Ember Moth ignition replicates
+Binding Seal replicates (position); the Solar Consecration replicates
 (`IsIgnited`). One connection avoids repeated Multi-Peer shutdown/reconnect
 flakiness.
 
@@ -306,7 +306,7 @@ Online lobby/controls:
   can also request a restart; the host executes it.
 - **Dynamic roster**: the lobby shows one creature until Player 2 joins, then a
   second slot is added using **that player's own selected creature** (not a fixed
-  second creature). Creature selection is sent in `RootboundInput.Creature`.
+  second creature). Creature selection is sent in `DuatbornInput.Creature`.
 - The `EncounterStarted` flag, player count, creatures and enemy count replicate,
   so peers rebuild their mirror on each transition.
 - The result overlay ("Press R to run it back") is shown per local player: a
@@ -316,7 +316,7 @@ Online lobby/controls:
   so online dodges were never latched).
 - The combined replication test asserts the lobby has zero enemies, that
   `StartEncounter()` replicates, and that ignition replicates with Player 2 as
-  Ember Moth.
+  Sunwing.
 
 Player/enemy/cage state uses `[Networked] NetworkArray<...>`; clients apply it in
 `Render` (the proxy's `FixedUpdateNetwork` is not reliably invoked in Multi-Peer).
@@ -329,12 +329,12 @@ attack path is plumbed but not separately asserted.
 ### Solo manual checklist (run with internet disconnected)
 
 - [ ] Menu shows **Play Solo**, **Host Co-op**, **Join Co-op**, and **Local Co-op** separately.
-- [ ] Select Root Guardian, then Play Solo: exactly one creature spawns, no idle second player.
-- [ ] Repeat selecting Ember Moth; the solo creature is Ember Moth.
+- [ ] Select Dune Warden, then Play Solo: exactly one creature spawns, no idle second player.
+- [ ] Repeat selecting Sunwing; the solo creature is Sunwing.
 - [ ] Movement, primary, Q targeting/clamping, dodge, cooldowns, defeat, `R` restart all work solo.
 - [ ] Camera and HUD show only the solo player.
-- [ ] Clearing all Blightlings completes the encounter with no teammate present.
-- [ ] The cage + Ember ignition is not required to clear.
+- [ ] Clearing all Hollow Sentinels completes the encounter with no teammate present.
+- [ ] The Binding Seal + Solar Consecration is not required to clear.
 - [ ] `Esc` pauses the solo simulation; `Esc` resumes; HUD shows PAUSED.
 - [ ] Disconnect Wi-Fi and confirm Play Solo still starts.
 - [ ] Mode transitions: Solo -> menu -> Solo; Solo -> menu -> Host; failed Join -> menu -> Solo; online disconnect -> menu -> Solo.

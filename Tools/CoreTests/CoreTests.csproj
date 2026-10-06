@@ -7,13 +7,13 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <IsPackable>false</IsPackable>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
-    <RootNamespace>Rootbound.Tests</RootNamespace>
-    <AssemblyName>Rootbound.CoreTests</AssemblyName>
+    <RootNamespace>Duatborn.Tests</RootNamespace>
+    <AssemblyName>Duatborn.CoreTests</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="../../Assets/Rootbound/Scripts/Core/**/*.cs" />
-    <Compile Include="../../Assets/Rootbound/Tests/EditMode/**/*.cs" />
+    <Compile Include="../../Assets/Duatborn/Scripts/Core/**/*.cs" />
+    <Compile Include="../../Assets/Duatborn/Tests/EditMode/**/*.cs" />
   </ItemGroup>
 
   <ItemGroup>

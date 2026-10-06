@@ -1,6 +1,6 @@
 # Photon Fusion 2 setup (Milestone 2 dependency)
 
-> Branding note: this game is **Duatborn**; historical titles "Rootbound: Fractured Realms" and "Dawnkeepers: Gates of Duat" are superseded. Internal identifiers, namespaces, assemblies, and `Assets/Rootbound` keep the old name (`docs/CREATIVE_DIRECTION.md`).
+> Branding note: this game is **Duatborn**; historical titles "Rootbound: Fractured Realms" and "Dawnkeepers: Gates of Duat" are superseded. Namespaces, assemblies, and the `Assets/Duatborn` path use the Duatborn name; the migration is recorded in `docs/RENAME_PLAN.md`.
 
 ## Current state (verified on this machine, 2026-10-02)
 
@@ -62,7 +62,7 @@ Download table: <https://doc.photonengine.com/fusion/v2/getting-started/sdk-down
    - Unity Test Runner (EditMode/PlayMode), or the batchmode commands in
      `docs/TESTING.md`.
 
-## Rootbound patch: Fusion installer vs MPPM virtual projects
+## Duatborn patch: Fusion installer vs MPPM virtual projects
 
 Fusion 2.1.3's `[InitializeOnLoad] FusionInstaller` reads
 `Packages/manifest.json` unconditionally, but MPPM virtual players have no
@@ -72,7 +72,7 @@ patch adds an MPPM guard using Fusion's supported `Fusion.FusionMppm.Status`.
 See `docs/patches/fusion-installer-mppm.patch` for the exact before/after,
 the reason, and reapplication steps. A Fusion SDK update overwrites the file, so
 reapply the patch after updates and verify with
-`Rootbound > Verify Fusion MPPM Patch` (read-only) or the
+`Duatborn > Verify Fusion MPPM Patch` (read-only) or the
 `FusionInstallerPatchPresenceTests` PlayMode test.
 
 ## Keeping credentials out of version control

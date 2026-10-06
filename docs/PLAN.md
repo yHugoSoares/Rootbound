@@ -1,6 +1,6 @@
 # Duatborn (formerly Rootbound: Fractured Realms) — Implementation Plan and Assumptions
 
-> Branding note: this game is **Duatborn**; historical titles "Rootbound: Fractured Realms" and "Dawnkeepers: Gates of Duat" are superseded. Internal identifiers, namespaces, assemblies, and `Assets/Rootbound` keep the old name (`docs/CREATIVE_DIRECTION.md`).
+> Branding note: this game is **Duatborn**; historical titles "Rootbound: Fractured Realms" and "Dawnkeepers: Gates of Duat" are superseded. Namespaces, assemblies, and the `Assets/Duatborn` path use the Duatborn name; the migration is recorded in `docs/RENAME_PLAN.md`.
 
 Status: living document. Section 1 below records the original authoring
 environment (Unity was not installed then). Unity is now installed and the project
@@ -49,11 +49,11 @@ compatible patch. This is the only version uncertainty and is called out in
 
 Two assemblies and a hard layer boundary:
 
-1. `Rootbound.Core` — pure C#, **no engine references** (`noEngineReferences: true`).
+1. `Duatborn.Core` — pure C#, **no engine references** (`noEngineReferences: true`).
    Authored `*Spec` definitions (plain C#), runtime rules (health, cooldowns,
-   dodge, target filtering, Root Cage ignition), and the authoritative
+   dodge, target filtering, Binding Seal ignition), and the authoritative
    tick-based `CombatSimulation`.
-2. `Rootbound.Unity` — MonoBehaviours only. Input capture, fixed-step hosting of
+2. `Duatborn.Unity` — MonoBehaviours only. Input capture, fixed-step hosting of
    the simulation, presentation (transforms, VFX hooks, camera), HUD, and a
    `INetworkSession` abstraction.
 
@@ -68,14 +68,14 @@ no per-player runtime state.
 
 ## 4. Milestones (implemented)
 
-- **Milestone 1 — local combat arena.** Root Guardian + Ember Moth, one enemy
-  (Blightling), movement, fixed isometric camera, directional primary attack,
+- **Milestone 1 — local combat arena.** Dune Warden + Sunwing, one enemy
+  (Hollow Sentinel), movement, fixed isometric camera, directional primary attack,
   dodge with i-frames and cooldown, one special each, health/damage/defeat/
-  restart, combat HUD, and the Root Cage ignition interaction. Local two-player.
+  restart, combat HUD, and the Binding Seal / Solar Consecration interaction. Local two-player.
 - **Milestone 2 — offline solo + Photon Fusion online.** Solo via the offline
   runner; Fusion Host Mode host/join, per-player ownership, host-authoritative
   `CombatSimulation`, replicated movement/combat/enemies/cage/ignition.
-- **Milestone 3 — run loop.** Three authored rooms, Sporeling enemy, between-room
+- **Milestone 3 — run loop.** Three authored gates, Fractured Vessel enemy, between-gate
   upgrade pickups, victory/defeat/replay. Plan: `docs/MILESTONE3_PLAN.md`.
 
 Explicitly out of scope so far: procedural generation, sanctuary, dialogue,

@@ -1,0 +1,19 @@
+{
+    "name": "Duatborn.Fusion",
+    "rootNamespace": "Duatborn.Fusion",
+    "references": [
+        "Duatborn.Core",
+        "Duatborn.Unity",
+        "Fusion.Unity",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

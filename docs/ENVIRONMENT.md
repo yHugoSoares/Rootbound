@@ -1,6 +1,6 @@
 # Development environment policy
 
-> Branding note: this game is **Duatborn**; historical titles "Rootbound: Fractured Realms" and "Dawnkeepers: Gates of Duat" are superseded. Internal identifiers, namespaces, assemblies, and `Assets/Rootbound` keep the old name (`docs/CREATIVE_DIRECTION.md`).
+> Branding note: this game is **Duatborn**; historical titles "Rootbound: Fractured Realms" and "Dawnkeepers: Gates of Duat" are superseded. Namespaces, assemblies, and the `Assets/Duatborn` path use the Duatborn name; the migration is recorded in `docs/RENAME_PLAN.md`.
 
 Recorded so the team agrees on where Duatborn is built, tested, and shipped.
 The project has been imported, compiled, tested, and built headlessly on the
@@ -41,8 +41,8 @@ project is pinned to `6000.0.84f1`. Do not upgrade the editor silently.
 - Generated caches (`Library/`, `Temp/`, `Logs/`, `obj/`, `bin/`, `Builds/`,
   `UserSettings/`) are ignored and must never be committed.
 - Authored/generated project content is committed so a checkpoint reproduces the
-  scene: `Assets/Rootbound/Data/` (definitions), `Assets/Rootbound/Scenes/`
-  (`CombatArena.unity`), `Assets/Rootbound/Settings/` (URP assets), the URP global
+  scene: `Assets/Duatborn/Data/` (definitions), `Assets/Duatborn/Scenes/`
+  (`CombatArena.unity`), `Assets/Duatborn/Settings/` (URP assets), the URP global
   settings, and `ProjectSettings/`. The editor menu generator is idempotent and
   reuses existing assets rather than overwriting them.
 - `.meta` files are committed (Unity generated 68 on first import). Do not

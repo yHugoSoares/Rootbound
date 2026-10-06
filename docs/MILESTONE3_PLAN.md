@@ -1,6 +1,6 @@
 # Milestone 3 plan (proposal - not implemented)
 
-> Branding note: this game is **Duatborn**; historical titles "Rootbound: Fractured Realms" and "Dawnkeepers: Gates of Duat" are superseded. Internal identifiers, namespaces, assemblies, and `Assets/Rootbound` keep the old name (`docs/CREATIVE_DIRECTION.md`).
+> Branding note: this game is **Duatborn**; historical titles "Rootbound: Fractured Realms" and "Dawnkeepers: Gates of Duat" are superseded. Namespaces, assemblies, and the `Assets/Duatborn` path use the Duatborn name; the migration is recorded in `docs/RENAME_PLAN.md`.
 
 Goal: turn the single arena into a small run loop, preserving the existing
 `CombatSimulation`, solo mode and Fusion Host Mode replication. No content pass
@@ -13,7 +13,7 @@ beyond what is listed.
 2. **Upgrade selection between rooms** - after a room clears, choose 1 of 3
    authored upgrades; applies for the rest of the run.
 3. **One additional enemy type** - a second `EnemySpec` (e.g. a ranged or
-   charging Blightling variant) with its own authored tuning.
+   charging Hollow Sentinel variant) with its own authored tuning.
 4. **One finale encounter** - a heavier authored room after room 3.
 5. **Victory / defeat / replay** - run ends on finale clear (victory) or all
    players defeated (defeat); return to menu and start a fresh run.

@@ -1,0 +1,23 @@
+{
+    "name": "Duatborn.Editor",
+    "rootNamespace": "Duatborn.EditorTools",
+    "references": [
+        "Duatborn.Core",
+        "Duatborn.Unity",
+        "Duatborn.Fusion",
+        "Photon.Realtime",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

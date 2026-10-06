@@ -112,7 +112,7 @@ single account or spell as "the" tradition.
   are invented mechanics.
 - No real deity, spell, or funerary practice is re-enacted or asserted.
 
-## Player-facing content requiring migration
+## Player-facing content migration (implemented)
 
 1. Menu title/subtitle and mode copy.
 2. Creature display names + HUD labels (`Root Guardian`/`Ember Moth` -> new).
@@ -125,7 +125,7 @@ single account or spell as "the" tradition.
 9. Branding: logo prompt/image (a Duatborn gate/sun-disc logo is supplied at
    `docs/assets/Duatborn.jpg`).
 
-Internal type names, namespaces, assembly names, enum values, and stable ids are
-**not** renamed. The Unity project folder, `Assets/Rootbound` path, and
-`Rootbound.*` namespaces keep their names; the GitHub repository is renamed to
-`duatborn`.
+Internal type names, namespaces, assembly names, and the Unity project folder now
+use the Duatborn name (`Assets/Duatborn`, `Duatborn.*`). Enum numeric values and
+stable content ids (`root_guardian`, `ember_moth`, `blightling`, `sporeling`,
+`up_*`, `room_*`) are preserved. See `docs/RENAME_PLAN.md`.

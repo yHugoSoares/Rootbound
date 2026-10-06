@@ -96,7 +96,7 @@ reimport/update **overwrites** the file and removes the patch.
 
 1. Keep `Assets/Photon` in version control (checkpointed with the project).
 2. After any Fusion SDK update, reapply the "After" snippet above.
-3. Verify presence (read-only): menu `Rootbound > Verify Fusion MPPM Patch`, the
+3. Verify presence (read-only): menu `Duatborn > Verify Fusion MPPM Patch`, the
    PlayMode test `FusionInstallerPatchPresenceTests`, or
    `grep "ROOTBOUND_PATCH(FusionInstaller-MPPM)" Assets/Photon/Fusion/Editor/Fusion.Unity.Editor.cs`.
 

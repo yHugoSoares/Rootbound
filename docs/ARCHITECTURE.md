@@ -1,6 +1,6 @@
 # Architecture
 
-> Branding note: this game is **Duatborn**; historical titles "Rootbound: Fractured Realms" and "Dawnkeepers: Gates of Duat" are superseded. Internal identifiers, namespaces, assemblies, and `Assets/Rootbound` keep the old name (`docs/CREATIVE_DIRECTION.md`).
+> Branding note: this game is **Duatborn**; historical titles "Rootbound: Fractured Realms" and "Dawnkeepers: Gates of Duat" are superseded. Namespaces, assemblies, and the `Assets/Duatborn` path use the Duatborn name; the migration is recorded in `docs/RENAME_PLAN.md`.
 
 Describes the boundaries actually implemented in Milestone 1.
 
@@ -8,12 +8,12 @@ Describes the boundaries actually implemented in Milestone 1.
 
 | Assembly | Location | Engine refs | Responsibility |
 | --- | --- | --- | --- |
-| `Rootbound.Core` | `Assets/Rootbound/Scripts/Core` | **No** (`noEngineReferences: true`) | Authored definitions, runtime rules, authoritative simulation. |
-| `Rootbound.Unity` | `Assets/Rootbound/Scripts/Runtime` | Yes | Input capture, fixed-step hosting, presentation, HUD, session abstraction. |
-| `Rootbound.Editor` | `Assets/Rootbound/Scripts/Editor` | Editor only | Reproducible definition-asset and scene generation. |
-| `Rootbound.Tests.EditMode` | `Assets/Rootbound/Tests/EditMode` | Editor only | NUnit tests over `Rootbound.Core`. |
+| `Duatborn.Core` | `Assets/Duatborn/Scripts/Core` | **No** (`noEngineReferences: true`) | Authored definitions, runtime rules, authoritative simulation. |
+| `Duatborn.Unity` | `Assets/Duatborn/Scripts/Runtime` | Yes | Input capture, fixed-step hosting, presentation, HUD, session abstraction. |
+| `Duatborn.Editor` | `Assets/Duatborn/Scripts/Editor` | Editor only | Reproducible definition-asset and scene generation. |
+| `Duatborn.Tests.EditMode` | `Assets/Duatborn/Tests/EditMode` | Editor only | NUnit tests over `Duatborn.Core`. |
 
-`Rootbound.Core` is a plain C# library. It is compiled unmodified by both Unity
+`Duatborn.Core` is a plain C# library. It is compiled unmodified by both Unity
 and `Tools/CoreTests/CoreTests.csproj`, so the automated tests exercise the same
 domain code Unity runs.
 
@@ -71,17 +71,17 @@ never writes simulation state directly.
 - **Abilities**: windup -> active (effect fires once) -> recovery. Dodging cancels windup/recovery.
 - **Target filtering**: `TargetRules.CanDamage` forbids friendly fire; melee uses an arc test.
 - **Dodge i-frames**: `DodgeState.IsInvulnerable` is only true inside `[InvulnStart, InvulnEnd]`.
-- **Root Cage**: aimed circle; enemies inside move at `speed * (1 - RestrainFactor)` and
+- **Binding Seal**: aimed circle; enemies inside move at `speed * (1 - RestrainFactor)` and
   cannot attack at full restrain. `TryIgnite` adds burn time but clamps total burn to
   `MaxIgnitionDuration`, so repeated ignitions cannot stack without a cap. Fire damage
   ticks on `FireTickInterval` while the cage is active and ignited.
 
 ## The co-op interaction
 
-Ember Moth's `IgnitionBurst` is resolved by the simulation:
+Sunwing's `IgnitionBurst` is resolved by the simulation:
 
 1. It deals its direct damage to enemies inside the burst radius.
-2. For each active Root Cage whose circle overlaps the burst, it calls `TryIgnite`.
+2. For each active Binding Seal whose circle overlaps the burst, it calls `TryIgnite`.
 3. `TryIgnite` returns true only when burn time was actually added. At the cap it
    returns false, so the `CageIgnited` event and the visual state change fire once
    and repeated casts cannot inflate damage.
@@ -99,7 +99,7 @@ The simulation is deliberately shaped for host authority:
   gameplay-affecting interactions.
 - Presentation reads confirmed state after `Step()`.
 
-`INetworkSession` (`Rootbound.Unity`) is the intended seam for a Fusion runner.
+`INetworkSession` (`Duatborn.Unity`) is the intended seam for a Fusion runner.
 `OfflineNetworkSession` is the only implementation today; it reports that online
 join requires Fusion. A Fusion integration would submit commands into the same
 `CombatSimulation` from `FixedUpdateNetwork` and replicate state; it must not
@@ -132,7 +132,7 @@ record the design that was followed.
 
 - The host runs one `CombatSimulation`; it stays engine-agnostic.
 - `FusionNetworkSession : INetworkSession` replaces `OfflineNetworkSession` when
-  online; `RootboundMenu` is unchanged.
+  online; `DuatbornMenu` is unchanged.
 - A `NetworkBehaviour` (for example `FusionCombatRunner`) owns the simulation and
   drives it from `FixedUpdateNetwork`, one `Step` per Fusion tick.
 - The local camera focuses the controlling player through
@@ -190,7 +190,7 @@ record the design that was followed.
   simulation state each frame. Decorative effects are derived from replicated
   state, not sent over the network.
 - `CombatHud`: IMGUI placeholder health/cooldown/encounter readout.
-- `RootboundMenu`: minimal host/join/status using `INetworkSession`.
+- `DuatbornMenu`: minimal host/join/status using `INetworkSession`.
 
 ## Deliberate omissions
 

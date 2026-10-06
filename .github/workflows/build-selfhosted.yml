@@ -51,7 +51,7 @@ jobs:
           fi
           "$UNITY" -batchmode -nographics -quit \
             -projectPath "$GITHUB_WORKSPACE" \
-            -executeMethod Rootbound.EditorTools.RootboundBuild.PerformBuild \
+            -executeMethod Duatborn.EditorTools.DuatbornBuild.PerformBuild \
             -logFile -
 
       - name: Upload artifact

@@ -79,7 +79,7 @@ jobs:
           # Custom method so the Fusion App ID can be injected before building.
           # game-ci does not forward workflow `env` into the build container, so
           # values are passed as customParameters instead.
-          buildMethod: Rootbound.EditorTools.RootboundBuild.PerformBuild
+          buildMethod: Duatborn.EditorTools.DuatbornBuild.PerformBuild
           customParameters: -duatbornTarget ${{ matrix.target }}${{ secrets.PHOTON_APP_ID != '' && format(' -photonAppId {0}', secrets.PHOTON_APP_ID) || '' }}
           buildsPath: build
           allowDirtyBuild: true

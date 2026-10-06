@@ -6,7 +6,7 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Rootbound/Scenes/CombatArena.unity
+    path: Assets/Duatborn/Scenes/CombatArena.unity
     guid: 275163249df6245a7a8aff5eb28bc7b6
   m_configObjects: {}
   m_UseUCBPForAssetBundles: 0
